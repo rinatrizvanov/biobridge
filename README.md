@@ -18,6 +18,8 @@ Licensing evidence, with commit references, will be recorded in `docs/licensing-
 Requires macOS on Apple Silicon and [uv](https://docs.astral.sh/uv/).
 
 ```sh
-scripts/create_engine_env.sh   # SpliceAI engine environment in .engine-venv (about 1.2 GB)
-uv run pytest -m model         # reproduces the upstream README examples (downloads about 100 MB of hg19 FASTA)
+scripts/create_engine_env.sh   # SpliceAI engine environment in .engine-venv (about 1.3 GB)
+uv run pytest                  # unit tests
+uv run pytest -m model         # real-model tests: upstream README examples and runner-vs-CLI comparison
+                               # (first run downloads about 140 MB of UCSC hg19/hg38 chromosomes)
 ```

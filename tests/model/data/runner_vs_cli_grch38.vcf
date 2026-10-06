@@ -1,0 +1,23 @@
+##fileformat=VCFv4.2
+##reference=GRCh38 (UCSC hg38 chr17 md5 023ccefd298db339159a446e88d742ac, chr22 md5 41b47ce1cc21b558409c19b892e1c0d1)
+##description=Synthetic test variants at real GRCh38 positions for comparing the BioBridge runner with the upstream spliceai CLI. REF bases come from UCSC hg38, except brca1_ref_mismatch, whose REF is deliberately wrong. These are not observed variants and must not be interpreted clinically. Records interleave chr17 and chr22 to exercise per-chromosome reference switching.
+##ALT=<ID=DEL,Description="Deletion">
+##contig=<ID=chr17,length=83257441>
+##contig=<ID=chr22,length=50818468>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr17	43057051	brca1_minus_snv	C	T	.	.	.
+chr22	19964300	comt_plus_snv	G	A	.	.	.
+chr17	43063331	brca1_masked_hides_annotated_loss	A	G	.	.	.
+chr17	43057050	brca1_minus_del2	ACC	A	.	.	.
+chr22	19941800	txnrd2_comt_two_genes	C	T	.	.	.
+chr17	43057135	brca1_minus_ins1	G	GT	.	.	.
+chr17	31169998	nf1_plus_snv	G	A	.	.	.
+chr17	43067603	brca1_masked_gain_at_annotated_site	T	C	.	.	.
+chr17	31181426	nf1_masked_unannotated_loss	A	G	.	.	.
+chr17	5800000	intergenic	C	T	.	.	.
+chr17	43057051	brca1_complex_delins	CC	TT	.	.	.
+chr17	43057055	brca1_ref_mismatch	G	A	.	.	.
+chr17	43057136	brca1_symbolic_allele	C	T,<DEL>	.	.	.
+chr22	19964167	comt_multiallelic	G	A,C	.	.	.
+chr17	43057137	brca1_star_allele	T	C,*	.	.	.
+chr17	43057000	brca1_deletion_too_long	AATACAGAGTGGTGGGGTGAGATTTTTGTCAACTTGAGGGAGGGAGCTTTACCTTTCTGTCCTGGGATTCTCTTGCTCGCTTTGGACCTTGGTGGTTTCTTC	A	.	.	.

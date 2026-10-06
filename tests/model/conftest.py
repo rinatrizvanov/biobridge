@@ -25,14 +25,30 @@ def engine_bin():
     return spliceai.parent
 
 
-@pytest.fixture(scope="session")
-def reference_set():
+def _fetch_module():
     spec = importlib.util.spec_from_file_location(
         "fetch_test_reference", REPO / "scripts" / "fetch_test_reference.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.ensure_set
+    return module
+
+
+@pytest.fixture(scope="session")
+def reference_set():
+    """Combined FASTA for a named set (one -R path for the upstream CLI)."""
+    return _fetch_module().ensure_set
+
+
+@pytest.fixture(scope="session")
+def reference_chromosomes():
+    """{chromosome: FASTA path} for a named set (per-chromosome files for the runner)."""
+    return _fetch_module().ensure_chromosomes
+
+
+@pytest.fixture(scope="session")
+def runner_script():
+    return REPO / "src" / "biobridge" / "adapters" / "spliceai" / "runner.py"
 
 
 @pytest.fixture(scope="session")

@@ -7,20 +7,23 @@ covers every chromosome the set's test variants need:
     python scripts/fetch_test_reference.py readme-grch37
 
 Files go to $BIOBRIDGE_TEST_REFERENCE_DIR (default: <repo>/.cache/reference).
-Expected md5 values are pinned here, copied from UCSC md5sum.txt on 2026-10-05.
-Standard library only, so it runs with any Python 3.
+Expected md5 values are pinned here, copied from UCSC md5sum.txt on 2026-10-05/06.
+Downloads use biobridge.setup.downloads (timeouts, retries, resume, md5 check).
 """
 
 from __future__ import annotations
 
 import argparse
 import gzip
-import hashlib
 import os
 import shutil
 import sys
-import urllib.request
 from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "src"))
+
+from biobridge.setup.downloads import download, file_digest  # noqa: E402
 
 UCSC = "https://hgdownload.soe.ucsc.edu/goldenPath/{build}/chromosomes/{chrom}.fa.gz"
 
@@ -29,12 +32,14 @@ MD5 = {
     ("hg19", "chr2"): "1946d3b6b9cf0e8f15f014fe63c75eac",
     ("hg19", "chr19"): "173b9cc2ec39c73668480f4f25701bc3",
     ("hg38", "chr17"): "023ccefd298db339159a446e88d742ac",
+    ("hg38", "chr22"): "41b47ce1cc21b558409c19b892e1c0d1",
 }
 
 SETS = {
     # Variants from the upstream SpliceAI README (GRCh37).
     "readme-grch37": ("hg19", ["chr2", "chr19"]),
-    "chr17-grch38": ("hg38", ["chr17"]),
+    # Runner-vs-CLI comparison; two chromosomes exercise reference switching.
+    "grch38-chr17-chr22": ("hg38", ["chr17", "chr22"]),
 }
 
 
@@ -42,15 +47,7 @@ def default_dest() -> Path:
     env = os.environ.get("BIOBRIDGE_TEST_REFERENCE_DIR")
     if env:
         return Path(env)
-    return Path(__file__).resolve().parent.parent / ".cache" / "reference"
-
-
-def _md5(path: Path) -> str:
-    digest = hashlib.md5()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    return REPO / ".cache" / "reference"
 
 
 def fetch_chromosome(build: str, chrom: str, dest: Path) -> Path:
@@ -58,35 +55,36 @@ def fetch_chromosome(build: str, chrom: str, dest: Path) -> Path:
     expected = MD5[(build, chrom)]
     gz_path = dest / "downloads" / build / f"{chrom}.fa.gz"
     fa_path = dest / build / f"{chrom}.fa"
-    if fa_path.exists() and gz_path.exists() and _md5(gz_path) == expected:
+    gz_ok = gz_path.exists() and file_digest(gz_path, "md5") == expected
+    if gz_ok and fa_path.exists():
         return fa_path
-
-    gz_path.parent.mkdir(parents=True, exist_ok=True)
-    if not (gz_path.exists() and _md5(gz_path) == expected):
+    if not gz_ok:
         url = UCSC.format(build=build, chrom=chrom)
-        part = gz_path.with_suffix(".gz.part")
         print(f"Downloading {url}", file=sys.stderr)
-        with urllib.request.urlopen(url, timeout=60) as resp, part.open("wb") as out:
-            shutil.copyfileobj(resp, out, 1 << 20)
-        actual = _md5(part)
-        if actual != expected:
-            part.unlink()
-            raise RuntimeError(f"md5 mismatch for {url}: expected {expected}, got {actual}")
-        part.replace(gz_path)
+        download(url, gz_path, md5=expected)
 
     fa_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = fa_path.with_suffix(".fa.part")
     with gzip.open(gz_path, "rb") as src, tmp.open("wb") as out:
         shutil.copyfileobj(src, out, 1 << 20)
     tmp.replace(fa_path)
+    # A stale index would point at the wrong offsets.
+    fa_path.with_suffix(".fa.fai").unlink(missing_ok=True)
     return fa_path
+
+
+def ensure_chromosomes(name: str, dest: Path | None = None) -> dict[str, Path]:
+    """Return {chromosome: decompressed FASTA path} for a named set."""
+    dest = dest or default_dest()
+    build, chroms = SETS[name]
+    return {chrom: fetch_chromosome(build, chrom, dest) for chrom in chroms}
 
 
 def ensure_set(name: str, dest: Path | None = None) -> Path:
     """Return the path of the combined FASTA for a named set, building it if needed."""
     dest = dest or default_dest()
     build, chroms = SETS[name]
-    parts = [fetch_chromosome(build, chrom, dest) for chrom in chroms]
+    parts = list(ensure_chromosomes(name, dest).values())
     combined = dest / f"{name}.fa"
     stamp = dest / f"{name}.sources"
     sources = "\n".join(f"{build}/{c} md5={MD5[(build, c)]}" for c in chroms) + "\n"
