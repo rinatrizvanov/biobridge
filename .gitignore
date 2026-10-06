@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+build/
+dist/
+*.egg-info/
+
+# Local engine environment and downloaded reference data
+.engine-venv/
+.cache/
+*.log
+
+# macOS
+.DS_Store
+
+# Personal planning notes (kept locally, never committed)
+Project Idea.docx

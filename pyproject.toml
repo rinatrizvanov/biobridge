@@ -1,0 +1,26 @@
+[project]
+name = "biobridge"
+version = "0.0.0"
+description = "Run selected scientific tools locally through a simple graphical interface (experimental)."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/biobridge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "model: runs real SpliceAI inference in the engine environment (slow; downloads reference data on first run)",
+]
+addopts = "-m 'not model'"
