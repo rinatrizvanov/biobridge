@@ -1,10 +1,12 @@
-"""BioBridge launcher (M0 feasibility spike).
+"""BioBridge launcher: a small window that sets up the engine and serves the interface.
 
-Sets up the SpliceAI engine with the bundled uv, downloads GRCh38 chromosome 17,
-runs one real SpliceAI prediction on a synthetic demo variant, and shows it on a
-localhost page. Long work runs on a background thread; the window only receives
-updates, so it stays responsive. A heartbeat measures how late the UI event loop
-runs and logs the worst delay for each stage. Quit stops every child process.
+After the license acknowledgment, it creates the SpliceAI engine with the bundled uv
+(once), then starts the local web interface on 127.0.0.1 and opens it in the
+browser through a one-time link. Long work runs on background threads, so the
+window stays responsive; a heartbeat logs the worst UI delay per stage. Setup and
+every running job hold a macOS activity assertion, so App Nap cannot throttle them
+while the browser is in front. Quit (window, page, or SIGTERM) cancels any job and
+stops every child process.
 """
 
 from __future__ import annotations
@@ -25,14 +27,12 @@ import toga
 from toga.style import Pack
 
 from biobridge import paths
-from biobridge.demo_server import ResultServer
-from biobridge.jobs.engine import run_engine
-from biobridge.setup.envs import InstallError, engine_ready, install_engine, sanitized_env
+from biobridge.setup.envs import InstallError, engine_ready, install_engine
 from biobridge.setup.processes import Cancelled, ChildProcesses, alive
-from biobridge.setup.reference import ensure_chromosome
+from biobridge.web.app import BioBridgeWeb
+from biobridge.web.jobs import JobManager
+from biobridge.web.server import WebServer
 
-# A synthetic test variant at a real GRCh38 position (BRCA1, chr17). Not a clinical example.
-DEMO = {"chrom": "chr17", "pos": 43057051, "ref": "C", "alt": "T", "id": "demo_synthetic_variant"}
 LICENSE_NOTICE = (
     "SpliceAI's trained models are licensed CC BY-NC 4.0: academic and non-commercial use only. "
     "Commercial use, including research at companies, requires a license from Illumina."
@@ -92,7 +92,8 @@ class BioBridge(toga.App):
         self.base.mkdir(parents=True, exist_ok=True)
         self.log = make_logger()
         self.procs = ChildProcesses()
-        self.server: ResultServer | None = None
+        self.server: WebServer | None = None
+        self.job_activity = None
         self.worker: threading.Thread | None = None
         self.stage = "idle"
         self.stage_lag = 0.0
@@ -106,8 +107,8 @@ class BioBridge(toga.App):
         self.clock = toga.Label("", style=Pack(font_size=11, margin_bottom=8))
         self.ack = toga.Switch("I will use SpliceAI only for academic or non-commercial research.",
                                value=bool(self.settings.get("engine_license_ack")))
-        self.run_button = toga.Button("Set up and run demo", on_press=self.on_run)
-        self.open_button = toga.Button("Open result in browser", on_press=self.on_open, enabled=False)
+        self.run_button = toga.Button("Start BioBridge", on_press=self.on_run)
+        self.open_button = toga.Button("Open in browser", on_press=self.on_open, enabled=False)
         quit_button = toga.Button("Quit", on_press=lambda w: self.request_exit())
 
         box = toga.Box(style=Pack(direction="column", margin=16))
@@ -193,7 +194,7 @@ class BioBridge(toga.App):
 
     def on_open(self, widget) -> None:
         if self.server:
-            webbrowser.open(self.server.url)
+            webbrowser.open(self.server.web.auth_url())  # a fresh one-time link each time
 
     def start_pipeline(self) -> None:
         if self.worker and self.worker.is_alive():
@@ -202,8 +203,20 @@ class BioBridge(toga.App):
         self.worker = threading.Thread(target=self.pipeline, name="pipeline", daemon=True)
         self.worker.start()
 
+    def license_acknowledgment(self) -> str:
+        return f"acknowledged in BioBridge at {self.settings.get('engine_license_ack_time', 'unknown time')}"
+
+    def on_job_running(self, running: bool) -> None:
+        """Hold an activity assertion while a job runs (the browser is usually in front)."""
+        if running and self.job_activity is None:
+            self.job_activity = begin_activity("Scoring variants with SpliceAI")
+        elif not running and self.job_activity is not None:
+            end_activity(self.job_activity)
+            self.job_activity = None
+        self.log.info("job_running" if running else "job_finished")
+
     def pipeline(self) -> None:
-        activity = begin_activity("Setting up SpliceAI and running a prediction")
+        activity = begin_activity("Setting up the SpliceAI engine")
         self.log.info("activity", extra={"data": {"began": activity is not None}})
         try:
             env_dir = paths.engine_env(self.base)
@@ -218,20 +231,15 @@ class BioBridge(toga.App):
                 )
                 self.log.info("engine_installed", extra={"data": {"seconds": round(time.monotonic() - t, 1)}})
 
-            self.set_stage("Downloading GRCh38 chromosome 17 (26 MB)…", determinate=True)
-            fasta = ensure_chromosome("chr17", self.base, progress=self.set_fraction)
-
-            self.set_stage("Running SpliceAI on the demo variant…")
-            results = self.run_demo(env_dir, fasta)
-
-            self.server = ResultServer(results, on_quit=lambda: self.ui(self.request_exit))
-            self.log.info("result_ready", extra={"data": {
-                "url_port": self.server.port,
-                "spawn_ms": [(n, round(t * 1000)) for n, t in self.procs.spawn_seconds]}})
-            self.set_stage("Done. The prediction is shown in your browser.")
+            manager = JobManager(self.base, env_dir, self.license_acknowledgment,
+                                 on_running=self.on_job_running)
+            self.server = WebServer(lambda host: BioBridgeWeb(
+                manager, host, on_quit=lambda: self.ui(self.request_exit))).start()
+            self.log.info("web_ready", extra={"data": {"port": self.server.port}})
+            self.set_stage("BioBridge is running. Use it in your browser; keep this window open.")
             self.ui(self._finished)
             if not os.environ.get("BIOBRIDGE_NO_BROWSER"):
-                webbrowser.open(self.server.url)
+                webbrowser.open(self.server.web.auth_url())
         except Cancelled:
             self.log.info("pipeline_cancelled")
         except Exception as exc:
@@ -258,38 +266,16 @@ class BioBridge(toga.App):
         self.run_button.text = "Retry"
         self.run_button.enabled = True
 
-    def run_demo(self, env_dir: Path, fasta: Path) -> dict:
-        job = self.base / "jobs" / time.strftime("%Y%m%d-%H%M%S")
-        job.mkdir(parents=True, exist_ok=True)
-        vcf = job / "input.vcf"
-        vcf.write_text(
-            "##fileformat=VCFv4.2\n##contig=<ID=chr17,length=83257441>\n"
-            "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
-            f"{DEMO['chrom']}\t{DEMO['pos']}\t{DEMO['id']}\t{DEMO['ref']}\t{DEMO['alt']}\t.\t.\t.\n"
-        )
-        request = {"schema": "biobridge.spliceai.request/1", "vcf": str(vcf), "annotation": "grch38",
-                   "distance": 50, "reference": {"chr17": str(fasta)}}
-        (job / "request.json").write_text(json.dumps(request))
-        def on_event(event):
-            if event["event"] == "stage":
-                self.set_detail({"loading_model": "Loading the model…",
-                                 "scoring": "Scoring…"}.get(event["stage"], event["stage"]))
-
-        # The watchdog kills the engine if it makes no progress for 300 s.
-        run_engine(env_dir / "bin" / "python", paths.RUNNER,
-                   ["score", "--request", job / "request.json", "--out", job / "results.json"],
-                   self.procs, job / "runner.log", sanitized_env(self.base), on_event)
-        results = json.loads((job / "results.json").read_text())
-        results["reference_md5"] = {"chr17": (fasta.with_name(fasta.name + ".md5")).read_text()}
-        return results
-
     # --- quit ----------------------------------------------------------------------
     def handle_exit(self, app, **kwargs) -> bool:
         t = time.monotonic()
         pids = self.procs.pids
-        running = self.procs.terminate_all(grace=3.0)
         if self.server:
-            self.server.close()
+            manager = self.server.web.manager
+            pids += [pid for state in manager.jobs.values() for pid in state.procs.pids]
+            self.server.stop()  # cancels a running job, which kills its engine process group
+        running = self.procs.terminate_all(grace=3.0)
+        end_activity(self.job_activity)
         survivors = [pid for pid in pids if alive(pid)]
         self.log.info("quit_cleanup", extra={"data": {
             "children_started": len(pids), "groups_running_at_quit": running,

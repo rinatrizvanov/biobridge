@@ -10,10 +10,14 @@ dependencies = [
     "toga>=0.5.7,<0.6",
     "uv==0.11.8",  # bundled; creates the engine environment on the user's Mac
     "truststore==0.10.4",  # TLS via the macOS trust store (the bundled Python has no CA file)
+    "starlette==1.7.0",    # local web interface (127.0.0.1 only)
+    "uvicorn==0.54.0",     # pure-Python server, no optional C extensions
+    "jinja2==3.1.6",
+    "python-multipart==0.0.32",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8", "briefcase==0.4.5"]
+dev = ["pytest>=8", "briefcase==0.4.5", "httpx==0.28.1", "playwright==1.63.0"]
 
 [build-system]
 requires = ["hatchling>=1.27"]
@@ -26,8 +30,9 @@ packages = ["src/biobridge"]
 testpaths = ["tests"]
 markers = [
     "model: runs real SpliceAI inference in the engine environment (slow; downloads reference data on first run)",
+    "browser: drives the web interface in real browsers with Playwright (Chromium and WebKit)",
 ]
-addopts = "-m 'not model'"
+addopts = "-m 'not model and not browser'"
 
 [tool.briefcase]
 project_name = "BioBridge"
@@ -40,14 +45,14 @@ formal_name = "BioBridge"
 description = "Run SpliceAI locally on your Mac (experimental feasibility build)."
 long_description = "Experimental feasibility build. Sets up the SpliceAI engine and shows one real prediction."
 sources = ["src/biobridge"]
-requires = ["uv==0.11.8", "truststore==0.10.4"]
+requires = ["uv==0.11.8", "truststore==0.10.4", "starlette==1.7.0", "uvicorn==0.54.0", "jinja2==3.1.6", "python-multipart==0.0.32"]
 # Console-script wrappers from dependencies are unused and embed the build machine's
-# path in their shebang; only the uv binary itself is needed.
+# path in their shebang. Remove everything in app_packages/bin except the uv binary:
+# names not starting with "u", "u" + anything but "v", and "uv" + at least one more character.
 cleanup_paths = [
-    "**/app_packages/bin/fonttools",
-    "**/app_packages/bin/pyft*",
-    "**/app_packages/bin/ttx",
-    "**/app_packages/bin/uvx",
+    "**/app_packages/bin/[!u]*",
+    "**/app_packages/bin/u[!v]*",
+    "**/app_packages/bin/uv?*",
 ]
 
 [tool.briefcase.app.biobridge.macOS]

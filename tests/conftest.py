@@ -1,4 +1,5 @@
-"""Fixtures for model tests, which run real SpliceAI inference in the engine environment.
+"""Shared fixtures for tests that use the real engine (model tests, and the real-engine
+browser test).
 
 These tests never skip when their prerequisites are missing: if a model test was
 selected (`pytest -m model`), a missing engine environment is a failure.
@@ -10,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-REPO = Path(__file__).resolve().parents[2]
+REPO = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="session")
@@ -53,4 +54,4 @@ def runner_script():
 
 @pytest.fixture(scope="session")
 def model_data():
-    return Path(__file__).parent / "data"
+    return REPO / "tests" / "model" / "data"

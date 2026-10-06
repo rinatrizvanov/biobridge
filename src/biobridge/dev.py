@@ -61,7 +61,7 @@ def main(argv=None) -> int:
     t = time.perf_counter()
     try:
         result = run_job(request, base, engine_env, ChildProcesses(),
-                         on_status=lambda text: print(f"[{time.perf_counter() - t:6.1f}s] {text}", file=sys.stderr),
+                         on_status=lambda p: print(f"[{time.perf_counter() - t:6.1f}s] {p.message}", file=sys.stderr),
                          license_acknowledgment=license_acknowledgment(base),
                          inactivity_timeout=args.timeout)
     except InputError as exc:

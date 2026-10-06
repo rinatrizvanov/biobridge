@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import secrets
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -28,7 +29,7 @@ from biobridge.provenance import build_info
 from biobridge.reports.csv_report import write_csv
 from biobridge.results import Row, rows_from_results, summarize
 from biobridge.setup.envs import lock_digest, sanitized_env
-from biobridge.setup.processes import ChildProcesses
+from biobridge.setup.processes import Cancelled, ChildProcesses
 from biobridge.setup.reference import UCSC_HG38, ensure_chromosome
 
 MAX_ALLELES = 50
@@ -42,6 +43,14 @@ class JobRequest:
     vcf_bytes: bytes | None = None
     vcf_name: str | None = None
     confirm_grch38: bool = False
+
+
+@dataclass
+class Progress:
+    stage: str             # "input", "reference", "loading_model", "scoring", "report" or "done"
+    message: str
+    done: int | None = None
+    total: int | None = None
 
 
 @dataclass
@@ -65,22 +74,35 @@ def run_job(
     base: Path,
     engine_env: Path,
     procs: ChildProcesses,
-    on_status: Callable[[str], None] = lambda text: None,
+    on_status: Callable[[Progress], None] = lambda progress: None,
     license_acknowledgment: str = "not recorded",
     inactivity_timeout: float = INACTIVITY_TIMEOUT,
+    cancel: threading.Event | None = None,
+    runner: Path = paths.RUNNER,
+    python: Path | None = None,
+    reference_provider: Callable = ensure_chromosome,
 ) -> JobResult:
+    """Run one job. `runner`, `python` and `reference_provider` exist so tests can substitute a
+    marked fake engine; the app always uses the defaults."""
     t0 = time.perf_counter()
     timings: dict[str, float] = {}
     started = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     job = new_job_dir(base)
     vcf = job / "input.vcf"
-    python, env, log = engine_env / "bin" / "python", sanitized_env(base), job / "engine.log"
+    python = python or engine_env / "bin" / "python"
+    env, log = sanitized_env(base), job / "engine.log"
+    cancel = cancel or threading.Event()
+
+    def check():
+        if cancel.is_set() or procs.closing:
+            raise Cancelled("cancelled")
 
     def engine(args, on_event=lambda e: None):
-        return run_engine(python, paths.RUNNER, args, procs, log, env, on_event, inactivity_timeout)
+        check()
+        return run_engine(python, runner, args, procs, log, env, on_event, inactivity_timeout)
 
     # 1. Input
-    on_status("Checking the input…")
+    on_status(Progress("input", "Checking the input…"))
     if (request.paste is None) == (request.vcf_bytes is None):
         raise InputError("Provide either one pasted variant or one VCF file.")
     if request.paste is not None:
@@ -110,8 +132,14 @@ def run_job(
                     key=lambda c: (len(c), c))
     reference = {}
     for chrom in needed:
-        on_status(f"Preparing GRCh38 {chrom}…")
-        reference[chrom] = ensure_chromosome(chrom, base)
+        check()
+        on_status(Progress("reference", f"Preparing GRCh38 {chrom}…"))
+
+        def downloading(done, total, chrom=chrom):
+            check()  # Raising here aborts the download; the partial file is kept for a later resume.
+            on_status(Progress("reference", f"Downloading GRCh38 {chrom}…", done, total))
+
+        reference[chrom] = reference_provider(chrom, base, progress=downloading)
     timings["reference_s"] = time.perf_counter() - t
 
     # 3. Scoring under the watchdog
@@ -122,17 +150,26 @@ def run_job(
         "distance": DISTANCE, "reference": {c: str(p) for c, p in reference.items()},
     }))
 
+    total = {"records": len(records)}
+
     def progress(event):
-        if event["event"] == "stage" and event.get("stage") == "loading_model":
-            on_status("Loading the SpliceAI model…")
+        if event["event"] == "start":
+            total["records"] = event.get("records", total["records"])
+        elif event["event"] == "stage" and event.get("stage") == "loading_model":
+            on_status(Progress("loading_model", "Loading the SpliceAI model…"))
+        elif event["event"] == "stage" and event.get("stage") == "scoring":
+            on_status(Progress("scoring", f"Scored 0 of {total['records']}…", 0, total["records"]))
         elif event["event"] == "progress":
-            on_status(f"Scoring {event['done']} of {event['total']}…")
+            on_status(Progress("scoring", f"Scored {event['done']} of {event['total']}…",
+                               event["done"], event["total"]))
 
     engine(["score", "--request", request_path, "--out", job / "results.json"], progress)
     results = json.loads((job / "results.json").read_text())
     timings["scoring_s"] = time.perf_counter() - t
 
     # 4. Rows, CSV, provenance
+    check()
+    on_status(Progress("report", "Preparing the results…"))
     t = time.perf_counter()
     rows = rows_from_results(results)
     summary = summarize(results, rows)
@@ -140,6 +177,7 @@ def run_job(
     provenance = {
         **build_info(),
         "adapter": ADAPTER,
+        "engine_mock": bool(eng.get("mock", False)),  # only the test engine sets this
         "spliceai_version": eng["spliceai"], "tensorflow_version": eng["tensorflow"],
         "keras_version": eng["keras"], "engine_python": eng["python"],
         "engine_lock_sha256": lock_digest(paths.ENGINE_LOCK),
@@ -164,5 +202,5 @@ def run_job(
     timings["engine_per_record_s"] = results["timings"].get("per_record_s", [])
     (job / "provenance.json").write_text(json.dumps({**provenance, "summary": summary, "timings": timings},
                                                     indent=1))
-    on_status("Done.")
+    on_status(Progress("done", "Done."))
     return JobResult(job, rows, summary, csv_path, provenance, timings)

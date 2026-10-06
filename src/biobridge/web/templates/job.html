@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}BioBridge results{% endblock %}
+{% block main %}
+{% if mock %}<p class="bb-mock" role="alert">MOCK — NOT MODEL OUTPUT. These values come from a test engine.</p>{% endif %}
+<section id="bb-job" data-job="{{ job.id }}" data-status="{{ job.status }}">
+{% if job.status == "running" %}
+  <h1>Scoring…</h1>
+  <div class="bb-progress" aria-live="polite">
+    <p id="bb-progress-text">{{ job.progress.message }}</p>
+    <progress id="bb-progress-bar"{% if job.progress.total %} max="{{ job.progress.total }}" value="{{ job.progress.done }}"{% endif %}></progress>
+  </div>
+  <form method="post" action="/jobs/{{ job.id }}/cancel"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="bb-button bb-secondary" type="submit" id="cancel">Cancel</button></form>
+  <noscript><p>Reload this page to see progress.</p></noscript>
+{% elif job.status == "failed" %}
+  <h1>Could not score this input</h1>
+  <p class="bb-error" role="alert">{{ job.error }}</p>
+  <p><a class="bb-button" href="/">Start again</a></p>
+{% elif job.status == "cancelled" %}
+  <h1>Cancelled</h1>
+  <p>The job was cancelled and its engine processes were stopped. No results were saved for display.</p>
+  <p><a class="bb-button" href="/">Start again</a></p>
+{% else %}
+  <h1>Results</h1>
+  <p class="bb-summary">
+    {{ provenance.input_name }} · {{ summary.alleles }} allele{{ "s" if summary.alleles != 1 }}:
+    {{ summary.by_status.get("SCORED", 0) }} scored{% if summary.by_status.get("NOT_SCORED") %}, {{ summary.by_status["NOT_SCORED"] }} not scored{% endif %}{% if summary.by_status.get("ERROR") %}, {{ summary.by_status["ERROR"] }} with errors{% endif %}.
+  </p>
+  <p class="bb-note">
+  {% if provenance.build_basis == "user_confirmed_and_header_agrees" %}Genome build: GRCh38, as you confirmed; the file's header agrees.
+  {% else %}Genome build: GRCh38, as you confirmed. The input does not state a genome build, so BioBridge cannot verify it.{% endif %}
+  </p>
+  {% if summary.many_ref_mismatches %}<p class="bb-warning" role="alert">Many variants do not match the GRCh38 reference. The coordinates may come from another genome build.</p>{% endif %}
+  <p><a class="bb-button" id="download" href="/jobs/{{ job.id }}/results.csv" download>Download CSV</a> <a class="bb-link" href="/">Score more variants</a></p>
+
+  <div class="bb-table-wrap">
+  <table class="bb-table">
+    <caption>Masked delta scores, with raw values in brackets. NA means not available.</caption>
+    <thead><tr><th>#</th><th>Variant</th><th>Gene</th><th>Status</th><th>Largest masked</th>
+      {% for e in ["AG", "AL", "DG", "DL"] %}<th><abbr title="{{ event_names[e] }}">{{ e }}</abbr></th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for v in views %}{% set r = v.row %}
+      <tr>
+        <td>{{ r.record }}</td>
+        <td><a href="#{{ v.uid }}">{{ r.chrom }}:{{ "{:,}".format(r.pos) }} {{ r.ref }}&gt;{{ r.alt if r.alt is not none else "NA" }}</a></td>
+        <td>{{ r.gene or "NA" }}</td>
+        <td>{% if r.status == "SCORED" %}Scored{% elif r.status == "ERROR" %}Error{% else %}Not scored{% endif %}</td>
+        <td>{% if v.best %}{{ "%.2f"|format(v.best[0]) }} {{ v.best[1] }}{% else %}NA{% endif %}</td>
+        {% for e in ["AG", "AL", "DG", "DL"] %}
+        <td class="bb-num">{% if r.masked.get(e) is not none %}{{ "%.2f"|format(r.masked[e]) }} ({{ "%.2f"|format(r.raw[e]) }}){% else %}NA{% endif %}</td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% for v in views %}{% set r = v.row %}
+  <article class="bb-variant" id="{{ v.uid }}">
+    <h2>{{ r.record }}. {{ r.chrom }}:{{ "{:,}".format(r.pos) }} {{ r.ref }}&gt;{{ r.alt if r.alt is not none else "NA" }}{% if r.gene %} · {{ r.gene }}{% endif %}{% if r.input_id and r.input_id not in ("pasted",) %} <span class="bb-muted">({{ r.input_id }})</span>{% endif %}</h2>
+    {% for sentence in v.explanation %}<p>{{ sentence }}</p>{% endfor %}
+    {% if v.plot %}
+    <div class="bb-chart">
+      <ul class="bb-legend">
+        <li><span class="bb-swatch bb-swatch-bar"></span>Masked delta score (bar)</li>
+        <li><span class="bb-swatch bb-swatch-dot"></span>Raw delta score (dot)</li>
+      </ul>
+      {{ v.plot|safe }}
+    </div>
+    <div class="bb-table-wrap">
+    <table class="bb-table bb-events">
+      <caption>The values in the chart</caption>
+      <thead><tr><th>Event</th><th>Masked</th><th>Raw</th><th>Offset (nt)</th><th>Position</th></tr></thead>
+      <tbody>{% for ev in v.events %}
+        <tr><td>{{ ev.name }} ({{ ev.event }})</td>
+          <td class="bb-num">{{ "%.2f"|format(ev.masked) if ev.masked is not none else "NA" }}</td>
+          <td class="bb-num">{{ "%.2f"|format(ev.raw) if ev.raw is not none else "NA" }}</td>
+          <td class="bb-num">{{ "%+d"|format(ev.offset) if ev.offset is not none else "NA" }}</td>
+          <td>{{ r.chrom ~ ":" ~ "{:,}".format(ev.position) if ev.position is not none else "NA" }}</td></tr>
+      {% endfor %}</tbody>
+    </table>
+    </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+
+  <section class="bb-about">
+    <h2>About these scores</h2>
+    {% for p in about %}<p>{{ p }}</p>{% endfor %}
+    <p class="bb-limits"><strong>Limitations.</strong> {{ limitations }}</p>
+  </section>
+
+  <details class="bb-provenance">
+    <summary>Provenance</summary>
+    <dl>
+      <dt>BioBridge</dt><dd>{{ provenance.biobridge_version }} ({{ provenance.biobridge_commit }})</dd>
+      <dt>Engine</dt><dd>spliceai {{ provenance.spliceai_version }}, TensorFlow {{ provenance.tensorflow_version }}, Keras {{ provenance.keras_version }}, Python {{ provenance.engine_python }}</dd>
+      <dt>Engine lock (sha256)</dt><dd><code>{{ provenance.engine_lock_sha256 }}</code></dd>
+      <dt>Models (sha256)</dt><dd><code>{{ provenance.models_sha256 }}</code></dd>
+      <dt>Annotation</dt><dd>{{ provenance.annotation }}, sha256 <code>{{ provenance.annotation_sha256 }}</code></dd>
+      <dt>Reference</dt><dd>{{ provenance.reference_build }}:
+        {% for c, md5 in provenance.reference_md5s.items() %}{{ c }} md5 <code>{{ md5 }}</code>{{ "; " if not loop.last }}{% endfor %}</dd>
+      <dt>Settings</dt><dd>maximum distance {{ provenance.max_distance }}; {{ provenance.score_modes }}</dd>
+      <dt>Genome build basis</dt><dd>{{ provenance.build_basis }}</dd>
+      <dt>License acknowledgment</dt><dd>{{ provenance.license_acknowledgment }}</dd>
+      <dt>Input</dt><dd>{{ provenance.input_name }}, sha256 <code>{{ provenance.input_sha256 }}</code></dd>
+      <dt>Started</dt><dd>{{ provenance.job_started }} on {{ provenance.host }}</dd>
+    </dl>
+  </details>
+{% endif %}
+</section>
+{% endblock %}
