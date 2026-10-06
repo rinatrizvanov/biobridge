@@ -1,6 +1,6 @@
 # 0001 — M0 feasibility spike
 
-Status: in progress (sessions 1–3 complete; session 4 next)
+Status: **GO**. M0 completed 2026-10-06; clean-machine verification pending.
 
 M0 must show, before any UI work, that real SpliceAI runs locally on Apple Silicon, that its output is correct, and that a packaged app can launch it. It is time-boxed to four focused sessions.
 
@@ -163,7 +163,24 @@ Verified only from BioBridge's own log (`~/Library/Logs/BioBridge/launcher.log`)
 - Clean-machine verification on a Mac without developer tools: **pending**.
 - Behaviour on IT-managed Macs.
 
-## Remaining
+## Session 4 — licensing evidence and decision (2026-10-06)
 
-- Session 4: `docs/licensing-evidence.md`; go/no-go decision.
-- Carried to M1: chromosome-end tests (`NEAR_CONTIG_END`, "fasta issue"); the runner watchdog; measuring the 50-allele runtime (currently an estimate).
+`docs/licensing-evidence.md` records each license statement with its commit, date and Software Heritage ID. It also records BioBridge's policy: no copying, modification or redistribution; models treated as CC BY-NC 4.0; acknowledgment required before installing the engine.
+
+## Decision: GO for Stage 1 (v0.1) with SpliceAI 1.3.1
+
+All M0 exit criteria were met on this Mac:
+
+- **Real model execution.** The pinned engine (TensorFlow 2.15.1, Keras 2.15, numpy 1.26, `setuptools<82`) installs binary-only on Apple Silicon.
+- **Correct output.**
+  - Both upstream README examples reproduce exactly.
+  - The runner equals the upstream CLI field for field in raw and masked modes on a 16-record GRCh38 fixture that switches chromosomes.
+  - Each ALT of a multi-allelic record is scored independently.
+- **Minimal packaged launch.** An ad-hoc-signed app, installed through the Gatekeeper flow, ran entirely on bundled tools. It produced a real prediction under the real account, recovered from interrupted installs, kept foreground UI delays at or below 7 ms, and left no processes behind on Quit.
+
+Conditions carried forward:
+
+- **Academic and non-commercial use only** (model license).
+- **Clean-machine verification is pending.** It must be done before any announcement, by an outside tester or a macOS VM.
+- **Distribution friction.** Without notarization, the `.dmg` itself needs an Open Anyway approval. M3 should evaluate a `.zip` download, which may need only one approval (untested). Whether the app needs a second approval after the disk image's is unverified.
+- **Carried to M1:** input validation; chromosome-end tests; the runner watchdog; CSV and provenance; measuring the 50-allele runtime (until then an estimate).
