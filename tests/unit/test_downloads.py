@@ -132,3 +132,16 @@ def test_gives_up_after_retries_with_backoff(server, tmp_path, sleeps):
 def test_requires_a_checksum(tmp_path):
     with pytest.raises(ValueError):
         download("http://127.0.0.1/x", tmp_path / "x")
+
+
+def test_tls_uses_the_macos_trust_store_and_verifies_certificates():
+    import ssl
+
+    import truststore
+
+    from biobridge.setup.downloads import tls_context
+
+    ctx = tls_context()
+    assert isinstance(ctx, truststore.SSLContext)
+    assert ctx.verify_mode == ssl.CERT_REQUIRED
+    assert ctx.check_hostname

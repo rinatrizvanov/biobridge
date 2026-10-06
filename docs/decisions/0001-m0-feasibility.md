@@ -1,6 +1,6 @@
 # 0001 — M0 feasibility spike
 
-Status: in progress (sessions 1–2 of 4 complete)
+Status: in progress (sessions 1–3 complete; session 4 next)
 
 M0 must show, before any UI work, that real SpliceAI runs locally on Apple Silicon, that its output is correct, and that a packaged app can launch it. It is time-boxed to four focused sessions.
 
@@ -102,7 +102,68 @@ TensorFlow uses about 5 CPU cores while scoring. **Estimate, not measured:** a j
   - Raw and masked scores need two upstream calls per record, doubling scoring time. This is acceptable at ≤50 alleles.
   - The runner watchdog (no event for 300 s → kill) is specified in the plan but not yet implemented; it belongs to the core job manager.
 
+## Session 3 — packaged app (2026-10-06): passed
+
+### What was built
+
+- **App:** Briefcase 0.4.5 builds an ad-hoc-signed, arm64-only `BioBridge.app` (163 MB) and `.dmg` (50 MB), bundle ID `local.biobridge.biobridge` (a placeholder). It contains a Toga window: license acknowledgment, setup progress, Retry, Quit.
+- **Engine install** (`biobridge.setup.envs`):
+  - Uses the bundled uv 0.11.8 and a Python that uv downloads into BioBridge's own folder.
+  - Child processes get only the system PATH plus proxy and certificate variables, `UV_NO_CONFIG=1`, and uv's own cache and Python folders.
+  - Up to 3 attempts with 15/30 s backoff. A completion marker records the lock digest.
+- **Process cleanup:** every child starts in its own process group (`biobridge.setup.processes`). Quit, or SIGTERM, terminates the groups and then kills them after 3 s.
+- **Demo:** one real prediction on a synthetic variant, shown on a 127.0.0.1 page protected by a token and a Host check.
+- **Bundle check:** `scripts/check_app_bundle.py` verifies the signature and required files, and that no `__pycache__` or builder home path/username is in the bundle.
+
+### Problems found and fixed (each diagnosed before changing anything)
+
+1. **Build-machine path in the app.** Four fontTools console scripts in the bundle had shebangs naming the builder's home folder. They are removed via `cleanup_paths`. The bundle check also confirmed that the other `/Users/...` strings come from upstream build machines (`runner`, `sysadmin`) or CPython test data.
+2. **TLS failed inside the app.** The bundled Python's OpenSSL looks for certificates in the python.org installer's folder, which a typical Mac lacks, so the chr17 download failed with `CERTIFICATE_VERIFY_FAILED`. It would have worked on a developer Mac that has python.org Python installed. BioBridge's own downloads now use `truststore`, which reads the macOS trust store and honours institutional root certificates in the Keychain. uv already used the system store (`UV_SYSTEM_CERTS=1`).
+3. **App Nap and idle sleep.** While setup runs, the app holds `NSActivityUserInitiated`, so macOS neither naps it nor idle-sleeps the Mac mid-download.
+4. **Harness bugs, not app bugs.** `ps` truncated command lines; a stale app instance from an aborted run was signalled; and the path's spaces broke command-line matching. The final harness tracks processes by parent PID.
+
+### Preflight evidence
+
+The packaged app was launched with `open`, which gives it launchd's environment rather than the developer shell's, against scratch folders whose paths contain spaces.
+
+- **Real prediction from the packaged app:** `T|BRCA1|0.00|0.00|0.02|0.99|-20|1|36|1` (raw = masked), identical to the development runner. The engine's Python is BioBridge's own uv-managed CPython 3.11.15, not a developer installation.
+- **Interrupted install, automatic retry:** uv was killed mid-download (SIGKILL). The app logged "Attempt 1 failed (exit code -9); retrying in 15 s", attempt 2 of 3 completed (68 s including backoff), and the prediction followed.
+- **Quit mid-install, then relaunch:** the app exited in 1.3 s, killing uv's process group with no survivors and no completion marker. The relaunch completed the install from the partially filled cache, produced the prediction (53 s), and wrote the marker.
+- **Quit cleanup:** every run ended with `survivors: []`, the app exiting 0.9–2.0 s after SIGTERM, and no stray instances.
+- **Bundle integrity:** after running, the signature still verifies and the bundle contains no `__pycache__`.
+- **Timings**, for a fresh install in the packaged app on a home connection: engine install 44–45 s (includes the ~20 s warm-up); launch to result 58–64 s. With the engine already installed, the demo completes in seconds.
+- **UI responsiveness:**
+  - Worst event-loop delays during install were 291–557 ms, once or twice per install, all well below the ~2 s at which macOS shows a spinning cursor. There were none during the chromosome download, and none in three cached runs.
+  - Spawning a child process takes 2–3 ms, so the delays are not caused by spawning.
+  - An independent heartbeat process showed no delays at the same moments, so the cause is not system-wide.
+  - The cause is not identified. It occurs only in background launches while uv unpacks wheels, and is likely timer handling in a background app under load (unverified). It will be re-measured with the window in the foreground during the Gatekeeper run.
+
+### Gatekeeper run under the real account (2026-10-06): passed
+
+Verified only from BioBridge's own log (`~/Library/Logs/BioBridge/launcher.log`), its data folder, and unprivileged file checks. No Gatekeeper queries or settings changes were made.
+
+- **Install path:**
+  - The `.dmg` was downloaded in Chrome; the installed app carries Chrome's quarantine attribute.
+  - *User-reported:* macOS blocked the disk image itself before mounting it, and it needed an Open Anyway approval. This is now in `docs/install.md`.
+  - The first attempt left no BioBridge log or data folder, so the app's code had not started. A second attempt by the user ran.
+- **Run, according to the log:**
+  - The app launched from `/Applications/BioBridge.app`, not a translocated copy. It inherited only `PATH=/usr/bin:/bin:/usr/sbin:/sbin`.
+  - It used the bundled uv. The engine's Python is BioBridge's own uv-managed CPython 3.11.15 in `~/Library/Application Support/BioBridge/uv-python`.
+  - The license acknowledgment was recorded at 04:41:54. The engine installed in 44.5 s on the first attempt, chr17 downloaded and was verified in 4 s, and the prediction took 7 s. The result was ready 56 s after the click.
+  - Real prediction: `T|BRCA1|0.00|0.00|0.02|0.99|-20|1|36|1`, raw = masked, identical to the development runner. Engine: spliceai 1.3.1, TensorFlow 2.15.1.
+- **Foreground responsiveness:** the worst UI event-loop delay per stage was 6.7 ms before the click, 3.7 ms during install, 4.6 ms during the chromosome download, and 1.6 ms while running the prediction. There were no stalls over 100 ms. The 291–557 ms delays seen in preflight therefore occurred only in background launches.
+- **Child process launch times:** 3–12 ms each.
+- **Quit:** `quit_cleanup` records 4 children started, none running at Quit, and no survivors. No BioBridge processes remained afterwards.
+- **Installed bundle afterwards:** the signature verifies and the bundle contains no `__pycache__`.
+- **Disk:** `du` counts 2.7 GB in Application Support. Files uv clones from its cache are counted twice, and the earlier APFS measurement suggests real usage near 1.4 GB, but this install's real usage was not measured.
+
+### Still unverified
+
+- Whether the app needed its own Open Anyway approval after the disk image's (not reported).
+- Clean-machine verification on a Mac without developer tools: **pending**.
+- Behaviour on IT-managed Macs.
+
 ## Remaining
 
-- Session 3: Briefcase hello-world `.dmg` → Open Anyway → uv-created engine env → one real score shown on a localhost page.
 - Session 4: `docs/licensing-evidence.md`; go/no-go decision.
+- Carried to M1: chromosome-end tests (`NEAR_CONTIG_END`, "fasta issue"); the runner watchdog; measuring the 50-allele runtime (currently an estimate).

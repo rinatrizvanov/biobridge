@@ -7,6 +7,9 @@ build/
 dist/
 *.egg-info/
 
+# Briefcase build cache
+.briefcase/
+
 # Local engine environment and downloaded reference data
 .engine-venv/
 .cache/

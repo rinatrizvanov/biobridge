@@ -5,6 +5,12 @@ developer scripts. Transient failures (connection errors, stalls, HTTP 408/429/5
 truncated transfers, checksum mismatches) are retried with exponential backoff, and
 an interrupted transfer resumes from its `.part` file when the server honours HTTP
 Range requests. Other HTTP errors (e.g. 404) fail immediately.
+
+TLS certificates are checked against the macOS system trust store via `truststore`,
+which also honours institutional root certificates installed in the Keychain. The
+Python bundled in the app has no usable default CA file: its OpenSSL looks in the
+python.org installer's folder, which most Macs do not have. Without truststore (e.g.
+when a developer script runs under the system Python), the default context is used.
 """
 
 from __future__ import annotations
@@ -12,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import http.client
 import socket
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -20,6 +27,14 @@ from pathlib import Path
 
 CHUNK = 1 << 20
 RETRYABLE_HTTP = {408, 429, 500, 502, 503, 504}
+
+
+def tls_context() -> ssl.SSLContext:
+    try:
+        import truststore
+    except ImportError:
+        return ssl.create_default_context()
+    return truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 
 
 class DownloadError(RuntimeError):
@@ -91,7 +106,7 @@ def _transfer(url: str, part: Path, timeout: float,
               progress: Callable[[int, int | None], None] | None) -> None:
     have = part.stat().st_size if part.exists() else 0
     request = urllib.request.Request(url, headers={"Range": f"bytes={have}-"} if have else {})
-    with urllib.request.urlopen(request, timeout=timeout) as resp:
+    with urllib.request.urlopen(request, timeout=timeout, context=tls_context()) as resp:
         if have and resp.status != 206:
             have = 0  # Server ignored the Range header; start over.
         length = resp.headers.get("Content-Length")
