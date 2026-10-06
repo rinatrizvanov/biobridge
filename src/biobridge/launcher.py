@@ -14,7 +14,6 @@ import json
 import logging
 import os
 import signal
-import subprocess
 import sys
 import threading
 import time
@@ -27,6 +26,7 @@ from toga.style import Pack
 
 from biobridge import paths
 from biobridge.demo_server import ResultServer
+from biobridge.jobs.engine import run_engine
 from biobridge.setup.envs import InstallError, engine_ready, install_engine, sanitized_env
 from biobridge.setup.processes import Cancelled, ChildProcesses, alive
 from biobridge.setup.reference import ensure_chromosome
@@ -270,24 +270,15 @@ class BioBridge(toga.App):
         request = {"schema": "biobridge.spliceai.request/1", "vcf": str(vcf), "annotation": "grch38",
                    "distance": 50, "reference": {"chr17": str(fasta)}}
         (job / "request.json").write_text(json.dumps(request))
-        with (job / "runner.log").open("w") as log:
-            proc = self.procs.spawn(
-                [env_dir / "bin" / "python", paths.RUNNER, "score",
-                 "--request", job / "request.json", "--out", job / "results.json"],
-                env=sanitized_env(self.base), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                stderr=log, text=True, bufsize=1)
-            for line in proc.stdout:
-                event = json.loads(line)
-                if event["event"] == "stage":
-                    self.set_detail({"loading_model": "Loading the model…",
-                                     "scoring": "Scoring…"}.get(event["stage"], event["stage"]))
-                elif event["event"] == "error":
-                    raise RuntimeError(event["message"])
-            rc = proc.wait()
-        if self.procs.closing:
-            raise Cancelled("BioBridge is quitting")
-        if rc != 0:
-            raise RuntimeError(f"SpliceAI runner exited with code {rc}; see {job / 'runner.log'}")
+        def on_event(event):
+            if event["event"] == "stage":
+                self.set_detail({"loading_model": "Loading the model…",
+                                 "scoring": "Scoring…"}.get(event["stage"], event["stage"]))
+
+        # The watchdog kills the engine if it makes no progress for 300 s.
+        run_engine(env_dir / "bin" / "python", paths.RUNNER,
+                   ["score", "--request", job / "request.json", "--out", job / "results.json"],
+                   self.procs, job / "runner.log", sanitized_env(self.base), on_event)
         results = json.loads((job / "results.json").read_text())
         results["reference_md5"] = {"chr17": (fasta.with_name(fasta.name + ".md5")).read_text()}
         return results

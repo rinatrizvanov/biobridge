@@ -44,6 +44,14 @@ class ChildProcesses:
             self._procs.append(proc)
             return proc
 
+    def kill_group(self, proc: subprocess.Popen) -> None:
+        """Kill one child's whole process group immediately (used by the watchdog)."""
+        _signal_group(proc.pid, signal.SIGKILL)
+        try:
+            proc.wait(timeout=2.0)
+        except subprocess.TimeoutExpired:
+            pass
+
     def sleep(self, seconds: float) -> None:
         """Wait, but give up immediately (raising Cancelled) if BioBridge starts quitting."""
         if self._closing.wait(seconds):

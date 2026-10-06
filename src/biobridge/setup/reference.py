@@ -7,16 +7,10 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
+from biobridge.genome import HG38_MD5
 from biobridge.setup.downloads import download
 
 UCSC_HG38 = "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/chromosomes/{chrom}.fa.gz"
-
-# md5 of each .fa.gz as published in UCSC md5sum.txt (checked 2026-10-05).
-# M1 extends this to chr1-22, X, Y and M.
-HG38_MD5 = {
-    "chr17": "023ccefd298db339159a446e88d742ac",
-    "chr22": "41b47ce1cc21b558409c19b892e1c0d1",
-}
 
 
 def ensure_chromosome(chrom: str, base: Path,

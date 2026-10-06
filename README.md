@@ -20,6 +20,13 @@ Requires macOS on Apple Silicon and [uv](https://docs.astral.sh/uv/).
 ```sh
 scripts/create_engine_env.sh   # SpliceAI engine environment in .engine-venv (about 1.3 GB)
 uv run pytest                  # unit tests
-uv run pytest -m model         # real-model tests: upstream README examples and runner-vs-CLI comparison
+uv run pytest -m model         # real-model tests: upstream README examples, runner-vs-CLI comparison,
+                               # validation, chromosome ends, and the job pipeline
                                # (first run downloads about 140 MB of UCSC hg19/hg38 chromosomes)
+
+# Score a variant or a small GRCh38 VCF without the app (developer use only):
+uv run python -m biobridge.dev score --variant chr17-43057051-C-T --confirm-grch38 \
+    --engine-env .engine-venv --home "$(mktemp -d)"
 ```
+
+Results (`results.csv`, `provenance.json`) are written to a job folder under `--home`.
