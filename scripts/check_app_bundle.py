@@ -65,6 +65,8 @@ def main(app: Path) -> int:
     problems += [f"missing {rel}" for rel in REQUIRED if not (app / rel).exists()]
     problems += [f"__pycache__ in bundle: {p.relative_to(app)}" for p in app.rglob("__pycache__")]
     package = app / "Contents/Resources/app/biobridge"
+    # Importing from the bundle must not write __pycache__ (with local paths) into it.
+    sys.dont_write_bytecode = True
     sys.path.insert(0, str(package.parent))
     from biobridge import __version__
     from biobridge.buildinfo import BUILD_INFO_NAME, source_digest

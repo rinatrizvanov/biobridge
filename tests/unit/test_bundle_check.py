@@ -6,6 +6,10 @@ BioBridge's own code. Only paths from this build may be reported.
 """
 
 import importlib.util
+import plistlib
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -61,3 +65,13 @@ def test_home_directory_is_reported_in_files_this_build_writes(tmp_path):
         "Contents/Resources/app_packages/foo-1.0.dist-info/direct_url.json",
     ]
     assert all(line.startswith("embeds the builder's home directory") for line in found)
+
+
+def test_the_check_does_not_write_into_the_bundle(tmp_path):
+    """Importing BioBridge from the bundle must not leave __pycache__ (with local paths) in it."""
+    app = bundle(tmp_path, {"Contents/Info.plist": plistlib.dumps({"CFBundleShortVersionString": "0.1.0"})})
+    shutil.copytree(REPO / "src" / "biobridge", app / "Contents/Resources/app/biobridge",
+                    ignore=shutil.ignore_patterns("__pycache__", "_build_info.json"))
+    before = sorted(p.relative_to(app) for p in app.rglob("*"))
+    subprocess.run([sys.executable, REPO / "scripts" / "check_app_bundle.py", app], capture_output=True)
+    assert sorted(p.relative_to(app) for p in app.rglob("*")) == before
