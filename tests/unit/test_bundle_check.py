@@ -1,0 +1,63 @@
+"""The bundle check's local-path rule, on a synthetic bundle built on a GitHub runner.
+
+There the builder's home is /Users/runner, upstream files copied into the bundle name
+their own /Users/runner/... build paths, and "runner" is also ordinary text in
+BioBridge's own code. Only paths from this build may be reported.
+"""
+
+import importlib.util
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
+spec = importlib.util.spec_from_file_location("check_app_bundle", REPO / "scripts" / "check_app_bundle.py")
+check_app_bundle = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(check_app_bundle)
+
+HOME = Path("/Users/runner")
+CHECKOUT = Path("/Users/runner/work/biobridge/biobridge")
+
+
+def bundle(tmp_path, files):
+    app = tmp_path / "BioBridge.app"
+    for rel, data in files.items():
+        (app / rel).parent.mkdir(parents=True, exist_ok=True)
+        (app / rel).write_bytes(data)
+    return app
+
+
+def test_runner_username_and_upstream_build_paths_are_not_reported(tmp_path):
+    app = bundle(tmp_path, {
+        "Contents/Resources/app/biobridge/adapters/spliceai/runner.py": b'"""The SpliceAI runner."""\n',
+        "Contents/MacOS/BioBridge": b"\x00/Users/runner/work/briefcase-macOS-template/stub.m\x00",
+        "Contents/Resources/app_packages/markupsafe/_speedups.cpython-311-darwin.so":
+            b"\x00/Users/runner/work/markupsafe/markupsafe/src/_speedups.c\x00",
+        "Contents/Resources/app_packages/bin/uv": b"\xcf\xfa\xed\xfe/Users/runner/.cargo/registry/src\x00",
+    })
+    assert check_app_bundle.local_paths(app, CHECKOUT, HOME) == []
+
+
+def test_build_checkout_path_is_reported_anywhere(tmp_path):
+    app = bundle(tmp_path, {
+        "Contents/Resources/app_packages/bin/tool": b"#!/Users/runner/work/biobridge/biobridge/build/python\n",
+        "Contents/Resources/app_packages/thirdparty/mod.so": b"\x00/Users/runner/work/biobridge/biobridge/x\x00",
+    })
+    found = check_app_bundle.local_paths(app, CHECKOUT, HOME)
+    assert found == ["embeds the build checkout's path: Contents/Resources/app_packages/bin/tool",
+                     "embeds the build checkout's path: Contents/Resources/app_packages/thirdparty/mod.so"]
+
+
+def test_home_directory_is_reported_in_files_this_build_writes(tmp_path):
+    app = bundle(tmp_path, {
+        "Contents/Resources/app/biobridge/_build_info.json": b'{"note": "/Users/runner/Library/x"}',
+        "Contents/Info.plist": b"<string>/Users/runner/x</string>",
+        "Contents/Resources/app_packages/foo-1.0.dist-info/direct_url.json": b'{"url": "file:///Users/runner/x"}',
+        "Contents/Resources/app_packages/bin/script": b"#!/Users/runner/.local/bin/python3\n",
+    })
+    found = check_app_bundle.local_paths(app, CHECKOUT, HOME)
+    assert [line.split(": ", 1)[1] for line in found] == [
+        "Contents/Info.plist",
+        "Contents/Resources/app/biobridge/_build_info.json",
+        "Contents/Resources/app_packages/bin/script",
+        "Contents/Resources/app_packages/foo-1.0.dist-info/direct_url.json",
+    ]
+    assert all(line.startswith("embeds the builder's home directory") for line in found)
