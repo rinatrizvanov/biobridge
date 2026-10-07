@@ -16,7 +16,7 @@ The expected values are recorded in [release-v0.1.0.md](release-v0.1.0.md), unde
 - the source sha256;
 - the disk-image checksum.
 
-The CSV shows the packaged source commit, not the repository's latest commit: later commits change only documentation or CI.
+The CSV shows the packaged source commit, not the repository's latest commit: later commits change only documentation, tests, scripts or CI.
 
 | # | Step | Expected | Record |
 |---|---|---|---|

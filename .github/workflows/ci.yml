@@ -1,0 +1,136 @@
+# Lint; unit, browser and real-engine (SpliceAI) tests; and a packaged-app build and
+# run, on GitHub-hosted Apple Silicon runners. Nothing is uploaded: no artifacts, no
+# release assets. Platform coverage and gaps: docs/ci.md.
+# Third-party actions are pinned to full commit SHAs (release tag in the comment).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.11.8"   # the uv bundled in the app, also used to build the engine environment
+  RUFF_VERSION: "0.16.10"
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: false
+      - name: Ruff (rules in ruff.toml)
+        run: uvx "ruff@${RUFF_VERSION}" check .
+
+  tests:
+    name: Tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]   # Apple Silicon (arm64) images; macos-14 is deprecated
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      BIOBRIDGE_ENGINE_ENV: ${{ github.workspace }}/.engine-venv
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            src/biobridge/adapters/spliceai/engine.lock
+      - name: Install the locked project environment
+        id: sync
+        run: uv sync --locked
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/Library/Caches/ms-playwright
+          key: playwright-${{ matrix.os }}-${{ hashFiles('uv.lock') }}
+      - name: Install Chromium and WebKit for Playwright
+        id: browsers
+        run: uv run playwright install chromium webkit
+      - name: Unit and HTTP tests
+        run: uv run pytest
+      - name: Browser tests (Chromium and WebKit, TEST-ONLY fake engine)
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        run: uv run pytest -m "browser and not model"
+      - name: Create the SpliceAI engine environment (hash-locked, binary-only)
+        id: engine
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: scripts/create_engine_env.sh "$BIOBRIDGE_ENGINE_ENV"
+      - name: Cache md5-pinned UCSC test chromosomes
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: .cache/reference/downloads
+          key: test-reference-${{ hashFiles('scripts/fetch_test_reference.py') }}
+      - name: Fetch test reference (hg19 chr2, chr19; hg38 chr17, chr22; md5-checked)
+        id: reference
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: uv run python scripts/fetch_test_reference.py readme-grch37 grch38-chr17-chr22
+      - name: Real-engine tests (README examples, runner vs upstream CLI, validation, pipeline, browsers)
+        if: ${{ !cancelled() && steps.engine.outcome == 'success' && steps.reference.outcome == 'success' && steps.browsers.outcome == 'success' }}
+        run: uv run pytest -m model
+
+  package:
+    name: Packaged app (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            src/biobridge/adapters/spliceai/engine.lock
+      - name: Install the locked project environment
+        run: uv sync --locked
+      - name: Build, sign ad hoc and check BioBridge.app and its disk image (kept on the runner)
+        run: scripts/build_app.sh
+      - name: Create the development engine environment (to re-score the app's jobs)
+        run: scripts/create_engine_env.sh
+      - name: Cache md5-pinned UCSC test chromosomes
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: .cache/reference/downloads
+          key: test-reference-${{ hashFiles('scripts/fetch_test_reference.py') }}
+      - name: Fetch hg38 chr17 and chr22 (md5-checked)
+        run: uv run python scripts/fetch_test_reference.py grch38-chr17-chr22
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/Library/Caches/ms-playwright
+          key: playwright-chromium-${{ matrix.os }}-${{ hashFiles('uv.lock') }}
+      - name: Install Chromium for Playwright
+        run: uv run playwright install chromium
+      - name: Run the packaged app end to end and compare its results with the runner
+        run: |
+          out="$(mktemp -d "$RUNNER_TEMP/biobridge-packaged.XXXXXX")"
+          uv run python scripts/verify_packaged_app.py build/biobridge/macos/app/BioBridge.app "$out"

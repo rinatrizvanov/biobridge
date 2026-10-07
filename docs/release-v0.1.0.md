@@ -8,8 +8,9 @@ Built with `scripts/build_app.sh` on 2026-10-07, with no uncommitted changes in 
 
 **Two commits, two roles:**
 - **Packaged source commit: `def7e9f`** (M3). The candidate app was built from it and records it in every CSV as `biobridge_commit`.
-- **Later commits**, starting with the documentation commit that added this page's evidence, change only documentation or CI files and no packaged path. They are not in the app and never appear in its provenance. Check with `git diff --stat def7e9f HEAD -- src pyproject.toml uv.lock`: no output means the repository's packaged source is still exactly what the candidate contains.
+- **Later commits**, starting with the documentation commit that added this page's evidence, change only documentation, tests, build and check scripts, and CI configuration. They change no packaged path. They are not in the app and never appear in its provenance. Check with `git diff --stat def7e9f HEAD -- src pyproject.toml uv.lock`: no output means the repository's packaged source is still exactly what the candidate contains.
 - **Rebuilding from a later commit** would record that later commit and produce a different disk image. The candidate is the one below.
+- **Is a new candidate needed? No.** The later changes to `scripts/build_app.sh` (running on a fresh checkout) and `scripts/check_app_bundle.py` (a corrected local-path rule) change how builds are made and checked, not what the app contains. The candidate bundle passes the corrected check. A new candidate is needed only when a packaged path changes.
 
 | Item | Value |
 |---|---|
@@ -41,7 +42,7 @@ All tests ran against the final source.
 | Unit and HTTP (`uv run pytest`) | 144 passed |
 | Real browsers, Chromium and WebKit (`-m browser`) | 32 passed, including one real-engine run per browser |
 | Real engine (`-m model`) | 28 passed: upstream README examples, runner vs upstream CLI in both masking modes, validation, chromosome ends, masking labels, job pipeline, and the real-engine browser runs |
-| Lint (ruff, rules E4, E7, E9, F) | clean |
+| Lint (ruff 0.16.10, rules in `ruff.toml`: E4, E7, E9, F) | clean |
 
 The browser layout tests cover:
 - chart values of 0, 0.99 and 1.00 inside the plot, with no labels overlapping;
@@ -103,13 +104,13 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
 
 Nothing below has been done or verified.
 
-1. **A second Apple Silicon Mac**, following [second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md). It answers three questions:
+1. **A second Apple Silicon Mac**, using the candidate disk image above (sha256 `bdbc41a9…`), which stays the candidate through later documentation or CI commits. Follow [second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md). It answers three questions:
    - Does a browser-downloaded copy set up and run on a Mac other than the developer's, without developer tools?
    - Does it need a second Open Anyway, for the app after the disk image's?
    - Does provenance show the clean commit?
 
    When packaging, Briefcase warns that an ad-hoc-signed app "will run on this computer, but will not run on anyone else's computer". This step is what tests that warning.
-2. **GitHub CI.** No workflow exists yet (`.github/workflows` is absent), and there is no GitHub remote. Writing the workflow, running it on macOS arm64 and building the disk image as a CI artifact all need a push, which needs your approval.
+2. **GitHub CI.** `.github/workflows/ci.yml` runs lint, the unit, browser and real-engine suites on macOS 15 and 26, and a packaged-app build and run on macOS 15, uploading nothing. Results and gaps are in [ci.md](ci.md). **macOS 14 compatibility is unverified:** no CI image and no Mac has run it.
 3. **IT-managed Macs** (Jamf, Santa), where Open Anyway may be unavailable.
 4. **Independent expert review** of the explanation wording.
 5. **Demo inputs based on public ClinVar records.** The current test inputs are synthetic variants at real GRCh38 positions.
@@ -118,5 +119,5 @@ Nothing below has been done or verified.
 8. **Optional:** confirmation of the model license terms from Illumina.
 
 **Known minor items:**
-- ruff 0.16's wider default rule set reports 62 style findings, none in the E4/E7/E9/F rules.
+- Only ruff's E4, E7, E9 and F rules are enforced (`ruff.toml`). Ruff 0.16's wider defaults report 62 style findings.
 - The test client emits a Starlette deprecation warning about `httpx`.

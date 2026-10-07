@@ -61,7 +61,8 @@ Details are in [docs/release-v0.1.0.md](docs/release-v0.1.0.md).
 
 **Still pending:**
 - An install on a second Mac ([checklist](docs/second-mac-checklist-v0.1.md)). This includes whether a downloaded copy needs a second approval.
-- GitHub CI. No workflow or remote exists yet.
+- Green GitHub CI runs. The workflow and its recorded results are in [docs/ci.md](docs/ci.md).
+- macOS 14, the documented minimum, is unverified.
 - IT-managed Macs.
 - Independent expert review of the explanations.
 - Demo inputs based on public ClinVar records.
@@ -72,6 +73,7 @@ Details are in [docs/release-v0.1.0.md](docs/release-v0.1.0.md).
 You need macOS on Apple Silicon and [uv](https://docs.astral.sh/uv/).
 
 ```sh
+uvx ruff@0.16.10 check .       # lint (rules in ruff.toml); CI jobs and coverage: docs/ci.md
 scripts/create_engine_env.sh   # SpliceAI engine environment in .engine-venv (about 1.3 GB)
 uv run pytest                  # unit and HTTP-level tests
 uv run pytest -m model         # real-engine tests: upstream README examples, runner vs CLI, validation,

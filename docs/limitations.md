@@ -25,6 +25,7 @@
 
 ## Platform and installation
 
+- **macOS versions:** BioBridge has been tested by hand only on macOS 15.6.1. CI covers the test suites on macOS 15 and 26, and the packaged app on macOS 15 ([ci.md](ci.md)). macOS 14, the documented minimum, is **unverified**.
 - **Hardware:** Apple Silicon Macs only. Intel Macs are untested; TensorFlow 2.17 and later dropped them.
 - **Notarization:** the app is not notarized, so macOS asks for an Open Anyway approval; see [install.md](install.md). On IT-managed Macs (for example with Jamf or Santa) this may be blocked. That has not been tested.
 - **First setup:** needs about 330 MB of downloads and about 2 GB of disk.
