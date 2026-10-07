@@ -16,7 +16,7 @@ The expected values are recorded in [release-v0.1.0.md](release-v0.1.0.md), unde
 - the source sha256;
 - the disk-image checksum.
 
-The CSV shows the packaged source commit, not the repository's latest commit: later commits change only documentation, tests, scripts or CI.
+The CSV shows the packaged source commit, not the repository's latest commit: later commits are not in this disk image.
 
 | # | Step | Expected | Record |
 |---|---|---|---|
@@ -29,7 +29,7 @@ The CSV shows the packaged source commit, not the repository's latest commit: la
 | 7 | Paste `chr17-43057051-C-T`, tick **These coordinates are GRCh38 (hg38).**, and click **Run SpliceAI**. | The first run also downloads chr17. Results show *Scored* and *Largest masked* `0.99 DL`. In the chart, the 0.99 label is fully visible. The value table reads AG 0.00, AL 0.00, DG 0.02, DL 0.99, masked and raw alike. | time to results |
 | 8 | Click **Download CSV** and open the file in TextEdit. | `biobridge_commit` is `def7e9fe9bc698a1c7fac0cb282a0b35af557660`, with **no** `+uncommitted changes`. `biobridge_source_sha256` is the recorded value. `DS_DL_masked` is `0.99`. | match? |
 | 9 | Click **Quit BioBridge** on the page. Then open **Activity Monitor** and search for `BioBridge`. | The page says *BioBridge is quitting*, the BioBridge window closes, and Activity Monitor lists no BioBridge process. | |
-| 10 | Copy `~/Library/Logs/BioBridge/launcher.log` and the CSV back to the first Mac. | I check setup, the job and Quit cleanup from the log, and compare the CSV with the SpliceAI runner, without changing anything. | |
+| 10 | Copy `~/Library/Logs/BioBridge/launcher.log` and the CSV back to the first Mac. | The log shows setup, the job and Quit cleanup. The CSV can be compared with the SpliceAI runner on the first Mac. Neither check changes anything. | |
 
 If a step fails, stop there. Note the step and the exact message, and keep the log; don't retry with changed settings.
 

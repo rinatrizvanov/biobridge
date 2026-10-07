@@ -20,9 +20,18 @@ See [docs/limitations.md](docs/limitations.md).
 
 ## Requirements
 
-- A Mac with Apple Silicon (M1 or later) running macOS 14 or later. Tested on an M4 with macOS 15.6.1.
+- A Mac with Apple Silicon, running macOS 14 or later. See the table below for what has actually been tested.
 - An internet connection for the first setup (about 330 MB), and the first time each chromosome is needed (12–80 MB each).
 - About 2 GB of free disk space.
+
+| Platform | Status |
+|---|---|
+| macOS 15, Apple Silicon | **Tested.** By hand on an M4 with macOS 15.6.1: the packaged app, including approving the downloaded disk image. On GitHub's runners with macOS 15.7.9: the test suites and the packaged app. |
+| macOS 26, Apple Silicon | **Partly tested.** The test suites pass on macOS 26.6.2 on GitHub's runners. The packaged app has not been run on macOS 26. |
+| macOS 14, Apple Silicon | **Unverified.** It is the intended minimum, but nothing has been run on it. |
+| Intel Macs, Windows, Linux | Not supported. |
+
+Only one Mac, the developer's, has installed the app by hand. An install on a second Mac is pending ([checklist](docs/second-mac-checklist-v0.1.md)).
 
 ## Install and use
 
@@ -68,7 +77,7 @@ Details are in [docs/release-v0.1.0.md](docs/release-v0.1.0.md).
 - IT-managed Macs.
 - Independent expert review of the explanations.
 - Demo inputs based on public ClinVar records.
-- A real bundle identifier in place of the placeholder.
+- A new disk image for distribution. The identifier, the shipped license texts and the explanation wording have changed since the current test candidate ([release page](docs/release-v0.1.0.md#release-blockers)).
 
 ## Development
 

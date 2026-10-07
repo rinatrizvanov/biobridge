@@ -145,7 +145,7 @@ Verified only from BioBridge's own log (`~/Library/Logs/BioBridge/launcher.log`)
 - **Install path:**
   - The `.dmg` was downloaded in Chrome; the installed app carries Chrome's quarantine attribute.
   - *User-reported:* macOS blocked the disk image itself before mounting it, and it needed an Open Anyway approval. This is now in `docs/install.md`.
-  - The first attempt left no BioBridge log or data folder, so the app's code had not started. A second attempt by the user ran.
+  - The first attempt left no BioBridge log or data folder, so the app's code had not started. A second attempt by the developer ran.
 - **Run, according to the log:**
   - The app launched from `/Applications/BioBridge.app`, not a translocated copy. It inherited only `PATH=/usr/bin:/bin:/usr/sbin:/sbin`.
   - It used the bundled uv. The engine's Python is BioBridge's own uv-managed CPython 3.11.15 in `~/Library/Application Support/BioBridge/uv-python`.

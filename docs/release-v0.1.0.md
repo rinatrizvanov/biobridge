@@ -1,6 +1,6 @@
 # BioBridge 0.1.0: release readiness
 
-**Release candidate. Not released, not tagged, nothing pushed or published.** Everything below was checked on the developer's Mac (Apple M4, macOS 15.6.1), using isolated data directories created with `mktemp -d`. None of it is a clean-machine test.
+**Release candidate. Not released, not tagged and not published.** The source is in a private GitHub repository. Checks on the developer's Mac (Apple M4, macOS 15.6.1) used isolated data directories created with `mktemp -d`; none of them is a clean-machine test. CI results are in [ci.md](ci.md#results).
 
 ## The candidate build
 
@@ -8,9 +8,16 @@ Built with `scripts/build_app.sh` on 2026-10-07, with no uncommitted changes in 
 
 **Two commits, two roles:**
 - **Packaged source commit: `def7e9f`** (M3). The candidate app was built from it and records it in every CSV as `biobridge_commit`.
-- **Later commits**, starting with the documentation commit that added this page's evidence, change only documentation, tests, build and check scripts, and CI configuration. They change no packaged path. They are not in the app and never appear in its provenance. Check with `git diff --stat def7e9f HEAD -- src pyproject.toml uv.lock`: no output means the repository's packaged source is still exactly what the candidate contains.
+- **Later commits are not in the app** and never appear in its provenance:
+  - up to `d6b3433`, they changed only documentation, tests, build and check scripts, and CI configuration;
+  - the public-release preparation after that changes packaged paths: the bundle identifier, the explanation text, the minimum macOS and the license texts shipped in the app.
+
+  `git diff --stat def7e9f HEAD -- src pyproject.toml uv.lock` shows exactly what a new build would contain beyond the candidate.
 - **Rebuilding from a later commit** would record that later commit and produce a different disk image. The candidate is the one below.
-- **Is a new candidate needed? No.** The later changes to `scripts/build_app.sh` (running on a fresh checkout) and `scripts/check_app_bundle.py` (a corrected local-path rule) change how builds are made and checked, not what the app contains. The candidate bundle passes the corrected check. A new candidate is needed only when a packaged path changes.
+- **Is a new candidate needed? For distribution, yes. For the second-Mac test, no.**
+  - **The current disk image stays unchanged** as the candidate for the second-Mac test. That test checks the download, approval, setup, scoring and Quit flow.
+  - **It must not be distributed.** It uses the placeholder identifier `local.biobridge.biobridge`, declares macOS 11 as its minimum, and lacks the runtime license texts. `scripts/check_app_bundle.py` now rejects it for exactly those three reasons.
+  - **The next distributed disk image is a new candidate.** It is built from a clean commit with the identifier `io.github.rinatrizvanov.biobridge`, the license texts and explanation text `explanations/2`, and needs its own checks (see [Release blockers](#release-blockers)).
 
 | Item | Value |
 |---|---|
@@ -100,24 +107,49 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
   - Quit cleanup: 4 child processes started, none running at Quit, no survivors.
 - **Jobs from the first manual run** were scored identically by the runner as well. Their CSVs were written by the earlier code, which still named an event (`AG`) for all-zero rows. The comparison now checks CSVs only for jobs made from the current source.
 
-## Outstanding checks
+## Release blockers
 
-Nothing below has been done or verified.
+### Before the source repository is made public
 
-1. **A second Apple Silicon Mac**, using the candidate disk image above (sha256 `bdbc41a9…`), which stays the candidate through later documentation or CI commits. Follow [second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md). It answers three questions:
+1. **Your decision: the email address in the history.** All commits carry the author address `[personal address removed]`, so making the repository public publishes it. Changing it means rewriting the history, which changes every commit SHA, including `def7e9f`, the commit the candidate app records.
+2. **A green CI run on the commit to be published** (see [ci.md](ci.md#results)).
+3. **At release time:**
+   - set `date-released` in `CITATION.cff` and the date in `CHANGELOG.md`;
+   - tag `v0.1.0`;
+   - make the repository public.
+
+   Each of these only on your approval.
+
+### Before the next disk image is distributed
+
+1. **The second-Mac test** with the current candidate disk image ([second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md)). It answers three questions:
    - Does a browser-downloaded copy set up and run on a Mac other than the developer's, without developer tools?
    - Does it need a second Open Anyway, for the app after the disk image's?
    - Does provenance show the clean commit?
 
-   When packaging, Briefcase warns that an ad-hoc-signed app "will run on this computer, but will not run on anyone else's computer". This step is what tests that warning.
-2. **macOS coverage gaps.** **macOS 14 compatibility is unverified:** no CI image and no Mac has run it. The packaged app has not run on macOS 26. GitHub CI itself passes: lint, the unit, browser and real-engine suites on macOS 15.7.9 and 26.6.2, and the packaged app on macOS 15.7.9, all green on the first run with nothing uploaded. Details are in [ci.md](ci.md#results).
-3. **IT-managed Macs** (Jamf, Santa), where Open Anyway may be unavailable.
-4. **Independent expert review** of the explanation wording.
-5. **Demo inputs based on public ClinVar records.** The current test inputs are synthetic variants at real GRCh38 positions.
-6. **A real bundle identifier.** `local.biobridge` in `pyproject.toml` is a placeholder and must be replaced before any public release, followed by a rebuild and a retest.
-7. **Release steps, each only on your approval:** tag `v0.1.0` locally, push, publish the disk image.
-8. **Optional:** confirmation of the model license terms from Illumina.
+   When packaging, Briefcase warns that an ad-hoc-signed app "will run on this computer, but will not run on anyone else's computer". This test is what checks that warning.
+2. **A new candidate built from a clean commit**, checked like this one:
+   - the bundle check, which now also checks the identifier, the minimum macOS and the shipped license texts;
+   - the packaged-app run against the runner;
+   - a short manual retest: steps 1, 7 and 8 of the [retest checklist](retest-checklist-v0.1.md), plus the app's new identifier.
+3. **Your decision: the bundled Python runtime.** The app ships Python 3.11.9 with OpenSSL 3.0.13 (January 2024). python.org publishes no newer 3.11 macOS binaries, so this runtime gets no security fixes. In the app, this Python's TLS is used only to download reference chromosomes from UCSC, verified against the macOS trust store. The engine install goes through uv, which does not use this OpenSSL. The interface is served only on 127.0.0.1. The options are:
+   - accept this for an experimental v0.1, and say so in the release notes;
+   - move the app's own runtime to a supported Python, such as 3.12 or 3.13. The engine environment would stay on 3.11, because TensorFlow 2.15 requires it. This means a re-lock and a full re-verification.
 
-**Known minor items:**
-- Only ruff's E4, E7, E9 and F rules are enforced (`ruff.toml`). Ruff 0.16's wider defaults report 62 style findings.
-- The test client emits a Starlette deprecation warning about `httpx`.
+## Explicitly pending (tracked, not blocking an experimental release)
+
+- **macOS 14 compatibility: unverified.** No CI image and no Mac has run it. The packaged app has not run on macOS 26.
+- **IT-managed Macs** (Jamf, Santa), where Open Anyway may be unavailable.
+- **Independent expert review** of the explanation wording. The [wording review](wording-review-v0.1.md) checked consistency with SpliceAI's own documentation and code; it is not that review.
+- **Demo inputs based on public ClinVar records.** The test inputs are synthetic variants at real GRCh38 positions.
+
+## Optional improvements
+
+- **Citation:** credit by name, and ORCID if wanted. `CITATION.cff` currently lists only the alias `rinatrizvanov`. A Zenodo DOI could be added at release.
+- **Smaller runtime:** remove the unused Tcl/Tk and ncurses libraries from the app (Briefcase `cleanup_paths`). The app would be smaller and ship fewer components.
+- **App icon:** a BioBridge icon instead of Briefcase's default.
+- **Provenance:** record the explanation text version (`explanations/2`) in provenance and the CSV.
+- **More CI:** run the packaged app on macOS 26 as well. It costs extra macOS minutes on a private repository.
+- **Public-repository files:** `SECURITY.md`, `CONTRIBUTING.md` and issue templates.
+- **Housekeeping:** a shellcheck pass; ruff's wider rules (62 style findings); replacing `httpx` in the test client, which raises a Starlette deprecation warning.
+- **Licensing:** written confirmation of the model license terms from Illumina.

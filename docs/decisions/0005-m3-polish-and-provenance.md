@@ -1,6 +1,6 @@
 # 0005 — M3: interface polish, source revision in provenance, release documentation
 
-Status: **local checks and the user's manual retest passed** (2026-10-07). An install on a second Mac, GitHub CI and IT-managed Macs are **pending**; see [release-v0.1.0.md](../release-v0.1.0.md#outstanding-checks).
+Status: **local checks and the developer's manual retest passed** (2026-10-07). An install on a second Mac, GitHub CI and IT-managed Macs are **pending**; see [release-v0.1.0.md](../release-v0.1.0.md#outstanding-checks).
 
 ## Inputs from the manual checklist
 

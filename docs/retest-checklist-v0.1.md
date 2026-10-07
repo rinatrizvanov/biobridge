@@ -13,6 +13,6 @@ This checklist takes about 10 minutes. Install `dist/BioBridge-0.1.0.dmg` over t
 | 7 | Download the CSV and open it in a text editor. | `biobridge_commit` is a 40-character commit, followed by `+uncommitted changes` if the build had uncommitted changes, instead of `unknown`. `biobridge_source_sha256` is filled. A row with all masked scores at 0.00 has `max_DS_masked_event` = `none`. | |
 | 8 | Quick regression: upload `tests/model/data/runtime_50_alleles_grch38.vcf`, click **Cancel** while it counts, then click **Quit BioBridge**. | Progress counts up; Cancel shows *Cancelled*; Quit closes BioBridge. | |
 
-Tell me which steps passed or failed. I will check your jobs against the SpliceAI runner, and Quit cleanup from BioBridge's own log, without changing anything.
+Record which steps passed or failed. A developer can then compare the jobs with the SpliceAI runner (`scripts/verify_packaged_app.py --compare-jobs`) and check Quit cleanup in BioBridge's own log, without changing anything.
 
-**Still pending, not covered here:** GitHub CI, a clean-machine install, IT-managed Macs, and whether a downloaded copy needs a second approval.
+**Still pending, not covered here:** a clean-machine install, IT-managed Macs, and whether a downloaded copy needs a second approval. GitHub CI is covered separately ([ci.md](ci.md)).

@@ -35,7 +35,8 @@
    - the signature verifies;
    - the required files are present;
    - the source digest matches the recorded one;
-   - the `Info.plist` version is right;
+   - the `Info.plist` version, bundle identifier and minimum macOS match `pyproject.toml`, and the identifier is not a placeholder;
+   - the third-party license texts are shipped;
    - no local paths are embedded;
 3. runs `scripts/verify_packaged_app.py`, which launches the built app with an isolated data folder and drives it in Chromium:
    - first setup through the app's bundled uv;

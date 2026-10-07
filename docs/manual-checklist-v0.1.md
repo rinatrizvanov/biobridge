@@ -20,10 +20,11 @@ should say *BioBridge is running…*, and your browser should open BioBridge.
 | 6 | **Input errors.** Enter `chr17-43057051-C-T` and click **Run SpliceAI** without ticking the confirmation. Then replace the variant with `BRCA1 c.68_69del`, tick the confirmation, and run. | The browser first asks you to tick the confirmation. The second attempt shows an error explaining the accepted forms (HGVS is not accepted in v0.1). | |
 | 7 | **Quit.** Click **Quit BioBridge** at the bottom of the page (or Quit in the window). | The page says *BioBridge is quitting*, and the BioBridge window closes. | |
 
-**Afterwards.** Tell me which steps passed or failed. I will check your run without changing
-anything: I re-score your packaged jobs' saved inputs with the development runner and require
-identical results (`scripts/verify_packaged_app.py --compare-jobs`), and I read BioBridge's own
-log to check that Quit left no processes behind.
+**Afterwards.** Record which steps passed or failed. A developer can then check the run without changing
+anything: `scripts/verify_packaged_app.py --compare-jobs` re-scores the packaged jobs' saved inputs
+with the development runner and requires identical results, and BioBridge's own log
+(`~/Library/Logs/BioBridge/launcher.log`) shows whether Quit left any process behind.
 
-**Not covered by this checklist (still pending):** GitHub CI, a clean-machine install (another
-Mac or account without developer tools), and IT-managed Macs.
+**Not covered by this checklist (still pending):** a clean-machine install (another Mac or an
+account without developer tools; see [second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md))
+and IT-managed Macs. GitHub CI is covered separately ([ci.md](ci.md)).

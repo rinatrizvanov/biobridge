@@ -28,6 +28,18 @@ First usable version. Experimental research software, not a diagnostic; SpliceAI
 - The results summary capitalised the uploaded file's name (`MyVariants.VCF` became `Myvariants.vcf`). It now shows the name exactly.
 - At phone width, the per-variant value tables and the table notes were cut off at the screen edge. Value tables now wrap to fit, and notes under a table that scrolls sideways wrap to the visible width.
 
+### Changed in preparation for a public release
+- **Bundle identifier:** now `io.github.rinatrizvanov.biobridge`, replacing the placeholder `local.biobridge.biobridge`. Data and log folders are unchanged.
+- **Minimum macOS:** the app now declares macOS 14, the documented minimum, instead of macOS 11.
+- **License texts:** the app now ships the texts for its Python runtime components (OpenSSL, Tcl/Tk, ncurses, XZ) and for Briefcase's stub and template. The notices also correct the stub's license: MIT, not BSD-3-Clause.
+- **Explanation wording** (`explanations/2`), checked against SpliceAI's README history and code (`docs/wording-review-v0.1.md`):
+  - the authors' interpretation of the delta score is quoted with attribution;
+  - the paper's cutoffs are noted as predating masking;
+  - the masked-score recommendation is cited to its source;
+  - the limitations sentence is less narrow.
+- **Bundle check:** it now fails on a placeholder identifier, a mismatched minimum macOS, or missing license texts.
+- **Docs:** the README and install guide separate tested platforms from unverified ones.
+
 ### Known limitations and pending checks
 See `docs/limitations.md` and `docs/release-v0.1.0.md`. Pending:
 - an install on a second Mac, including whether a downloaded copy needs a second approval;
@@ -35,4 +47,4 @@ See `docs/limitations.md` and `docs/release-v0.1.0.md`. Pending:
 - IT-managed Macs;
 - independent expert review of the explanations;
 - ClinVar-based demo inputs;
-- a real bundle identifier.
+- a new disk image for distribution (see `docs/release-v0.1.0.md`).

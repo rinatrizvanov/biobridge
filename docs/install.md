@@ -2,7 +2,7 @@
 
 BioBridge is not notarized by Apple: notarization needs a paid Apple Developer account, and this is a free, volunteer project. macOS therefore asks you, once, to confirm that you want to open the downloaded disk image, and possibly the app. You never need the Terminal.
 
-You need a Mac with Apple Silicon (M1 or later) and macOS 14 or later, an internet connection for the first setup (about 330 MB), and about 2 GB of free space.
+You need a Mac with Apple Silicon and macOS 14 or later, an internet connection for the first setup (about 330 MB), and about 2 GB of free space. Only macOS 15 has been fully tested. macOS 26 is partly tested and macOS 14 is unverified; see the platform table in the [README](../README.md#requirements).
 
 ## Steps
 
