@@ -10,8 +10,8 @@
 | **Tests** | `macos-15`, `macos-26` (Apple Silicon) | Several suites, each a separate step (listed below). |
 | **Packaged app** | `macos-15` | The whole packaged app on a fresh checkout (steps listed below). |
 
-**Tests job.** Each suite reports on its own:
-1. **Unit and HTTP tests** (`uv run pytest`, 148 tests). They cover:
+**Tests job.** The test environment uses Python 3.13 (from `.python-version`), the app's runtime series. The real-engine suite drives the separate Python 3.11 engine environment. Each suite reports on its own:
+1. **Unit and HTTP tests** (`uv run pytest`, 151 tests). They cover:
    - input validation and upload limits, and build evidence;
    - downloads (timeouts, retries, resume, checksums) and engine install retries;
    - the watchdog, and Quit cleanup of child processes;
@@ -95,7 +95,29 @@ It no longer searches for a bare username. The candidate bundle passes the new r
 
 ## Results
 
-**Run 37657592890**, for the push of `55316c0` on 2026-10-07: **every job passed.** Every step succeeded, and the run uploaded no artifacts.
+**Run 37664065962**, for the push of `3a6f738` on 2026-10-07, the candidate's packaged source commit: **every job passed.** Every step succeeded, and the run uploaded no artifacts.
+
+| Job | Operating system | Result | Duration |
+|---|---|---|---|
+| Lint | Ubuntu 24.04.5 | passed | 9 s |
+| Tests | macOS 15.7.9 (24G830) | unit and HTTP: 151 passed; browser: 30 passed; real engine: 28 passed | 7 min 52 s |
+| Tests | macOS 26.6.2 (25G83) | unit and HTTP: 151 passed; browser: 30 passed; real engine: 28 passed | 7 min 38 s |
+| Packaged app | macOS 15.7.9 | build and bundle check passed; packaged run passed | 3 min 10 s |
+
+**Which Python ran where:**
+- **Test environment:** Python 3.13.15, the runner's own copy. The tests need only the 3.13 series, matching the app's runtime.
+- **Engine environment:** Python 3.11.15.
+- **The packaged app's bundled runtime:** Python 3.13.16 with OpenSSL 3.5.9, as printed by the bundle check.
+
+**Packaged-app job:**
+- **The build:** commit `3a6f738`, with no uncommitted changes, and source sha256 `1f90830a…`. That is the same digest as the candidate disk image built on the developer's Mac.
+- **The packaged run:**
+  - first setup took 15.4 s, the pasted variant 10.5 s and the upload 37.3 s;
+  - all 110 requests stayed on 127.0.0.1, with no failed requests or page errors;
+  - no process survived Quit;
+  - both jobs were identical to the runner.
+
+**Earlier run 37657592890**, for the push of `55316c0` on 2026-10-07: **every job passed.** Every step succeeded, and the run uploaded no artifacts.
 
 | Job | Operating system | Result | Duration |
 |---|---|---|---|

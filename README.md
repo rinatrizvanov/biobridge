@@ -26,7 +26,7 @@ See [docs/limitations.md](docs/limitations.md).
 
 | Platform | Status |
 |---|---|
-| macOS 15, Apple Silicon | **Tested.** By hand on an M4 with macOS 15.6.1: the packaged app, including approving the downloaded disk image. On GitHub's runners with macOS 15.7.9: the test suites and the packaged app. |
+| macOS 15, Apple Silicon | **Tested.** By hand on an M4 with macOS 15.6.1: the packaged app, including approving the downloaded disk image. This used an earlier build with the Python 3.11.9 runtime. The current candidate, with Python 3.13.16, has passed the automated packaged-app checks there. On GitHub's runners with macOS 15.7.9: the test suites and the packaged app. |
 | macOS 26, Apple Silicon | **Partly tested.** The test suites pass on macOS 26.6.2 on GitHub's runners. The packaged app has not been run on macOS 26. |
 | macOS 14, Apple Silicon | **Unverified.** It is the intended minimum, but nothing has been run on it. |
 | Intel Macs, Windows, Linux | Not supported. |
@@ -77,7 +77,7 @@ Details are in [docs/release-v0.1.0.md](docs/release-v0.1.0.md).
 - IT-managed Macs.
 - Independent expert review of the explanations.
 - Demo inputs based on public ClinVar records.
-- A new disk image for distribution. The identifier, the shipped license texts and the explanation wording have changed since the current test candidate ([release page](docs/release-v0.1.0.md#release-blockers)).
+- A manual retest of the current candidate disk image, built from `3a6f738` with the app runtime Python 3.13.16 ([release page](docs/release-v0.1.0.md#release-blockers)).
 
 ## Development
 
