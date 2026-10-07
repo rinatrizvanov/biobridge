@@ -22,6 +22,7 @@ also ordinary text in BioBridge's own code (runner.py).
 
 import json
 import plistlib
+import re
 import tomllib
 import subprocess
 import sys
@@ -31,12 +32,13 @@ REQUIRED = [
     "Contents/Resources/app_packages/bin/uv",
     "Contents/Resources/app/biobridge/adapters/spliceai/engine.lock",
     "Contents/Resources/app/biobridge/adapters/spliceai/runner.py",
-    # License texts for components of the Python runtime and the Briefcase stub.
+    # License texts for components of the Python runtime and the Briefcase stub. The
+    # Python license text for the bundled runtime's exact version is checked separately.
     *(f"Contents/Resources/app/biobridge/third_party_licenses/{name}" for name in (
-        "README.txt", "python-3.11.9-license.rst", "tcl-8.6.13-license.terms", "tk-8.6.13-license.terms",
-        "ncurses-5.9-license.txt", "xz-5.2.3-COPYING", "briefcase-macOS-Xcode-template-LICENSE",
+        "README.txt", "ncurses-6.5-COPYING", "xz-5.2.3-COPYING", "briefcase-macOS-Xcode-template-LICENSE",
         "briefcase-macOS-App-template-LICENSE")),
 ]
+LICENSES = "Contents/Resources/app/biobridge/third_party_licenses"
 REPO = Path(__file__).resolve().parent.parent
 # Reverse-DNS prefixes that no released build may use.
 PLACEHOLDER_PREFIXES = ("local.", "com.example.", "org.example.", "org.beeware.")
@@ -49,6 +51,17 @@ def bundle_identifier(pyproject: Path) -> str:
     briefcase = tomllib.loads(pyproject.read_text())["tool"]["briefcase"]
     (app_name,) = briefcase["app"]
     return f"{briefcase['bundle']}.{app_name}"
+
+
+def runtime_versions(app: Path) -> tuple[str | None, str | None]:
+    """The bundled Python runtime's version and the OpenSSL version in its libcrypto."""
+    plists = sorted(app.glob("Contents/Frameworks/Python.framework/Versions/*/Resources/Info.plist"))
+    python = plistlib.loads(plists[0].read_bytes()).get("CFBundleVersion") if plists else None
+    openssl = None
+    for lib in app.glob("Contents/Frameworks/Python.framework/Versions/*/lib/libcrypto.*.dylib"):
+        found = re.search(rb"OpenSSL (\d+\.\d+\.\d+)", lib.read_bytes())
+        openssl = found.group(1).decode() if found else openssl
+    return python, openssl
 
 
 def own_file(rel: Path, data: bytes) -> bool:
@@ -108,6 +121,10 @@ def main(app: Path) -> int:
             problems.append("recorded source digest does not match the bundled code")
         print(f"build info: commit {info.get('commit')}, uncommitted changes {info.get('uncommitted_changes')}, "
               f"source sha256 {str(info.get('source_sha256'))[:16]}…")
+    python, openssl = runtime_versions(app)
+    print(f"runtime: Python {python}, OpenSSL {openssl}")
+    if not (app / LICENSES / f"python-{python}-license.rst").exists():
+        problems.append(f"no license text for the bundled Python runtime: {LICENSES}/python-{python}-license.rst")
     problems += local_paths(app, REPO, Path.home())
     for problem in problems:
         print("FAIL:", problem)

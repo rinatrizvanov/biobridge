@@ -33,9 +33,9 @@ Status: **done locally** (2026-10-07). The repository is still private, with no 
   - expat and libmpdec, compiled into CPython.
 
   libffi and zlib are used from macOS itself.
-- **The fix.** The upstream license texts, at those versions, are now in `src/biobridge/third_party_licenses/` with an index, so they ship in the app. The bundle check requires them.
+- **The fix.** The upstream license texts, at those versions, are now in `src/biobridge/third_party_licenses/` with an index, so they ship in the app. The bundle check requires them. (For the Python 3.13.16 runtime these texts were replaced in [0007](0007-app-runtime-python-3.13.md).)
 - **A correction.** The Briefcase stub and template are MIT-licensed, not BSD-3-Clause as previously listed.
-- **A related finding.** The runtime is Python 3.11.9, the last python.org macOS binary for 3.11, so it gets no further security fixes. It is a decision before distribution; see the [release page](../release-v0.1.0.md#release-blockers).
+- **A related finding (corrected).** The runtime was Python 3.11.9, the last python.org macOS binary for 3.11. Python 3.11 itself still receives source-only security releases until October 2027, but the bundled 3.11.9 build could not receive them. Resolved in [0007](0007-app-runtime-python-3.13.md): the app's runtime is now Python 3.13.16 with OpenSSL 3.5.9.
 
 ## Explanation wording
 

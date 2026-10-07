@@ -88,6 +88,16 @@ def test_bundle_identifier_is_real_and_matches_the_launcher():
 def test_required_license_texts_exist_in_the_source():
     prefix = "Contents/Resources/app/"
     shipped = [rel for rel in check_app_bundle.REQUIRED if "/third_party_licenses/" in rel]
-    assert len(shipped) == 8
+    assert len(shipped) == 5
     for rel in shipped:
         assert (REPO / "src" / rel.removeprefix(prefix)).is_file(), rel
+
+
+def test_runtime_versions_and_matching_python_license(tmp_path):
+    framework = "Contents/Frameworks/Python.framework/Versions/3.13"
+    app = bundle(tmp_path, {
+        f"{framework}/Resources/Info.plist": plistlib.dumps({"CFBundleVersion": "3.13.16"}),
+        f"{framework}/lib/libcrypto.3.dylib": b"\x00OpenSSL 3.5.9 29 Sep 2026\x00",
+    })
+    assert check_app_bundle.runtime_versions(app) == ("3.13.16", "3.5.9")
+    assert (REPO / "src/biobridge/third_party_licenses/python-3.13.16-license.rst").is_file()

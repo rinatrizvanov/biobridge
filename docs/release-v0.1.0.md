@@ -132,9 +132,11 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
    - the bundle check, which now also checks the identifier, the minimum macOS and the shipped license texts;
    - the packaged-app run against the runner;
    - a short manual retest: steps 1, 7 and 8 of the [retest checklist](retest-checklist-v0.1.md), plus the app's new identifier.
-3. **Your decision: the bundled Python runtime.** The app ships Python 3.11.9 with OpenSSL 3.0.13 (January 2024). python.org publishes no newer 3.11 macOS binaries, so this runtime gets no security fixes. In the app, this Python's TLS is used only to download reference chromosomes from UCSC, verified against the macOS trust store. The engine install goes through uv, which does not use this OpenSSL. The interface is served only on 127.0.0.1. The options are:
-   - accept this for an experimental v0.1, and say so in the release notes;
-   - move the app's own runtime to a supported Python, such as 3.12 or 3.13. The engine environment would stay on 3.11, because TensorFlow 2.15 requires it. This means a re-lock and a full re-verification.
+3. **Done: the bundled Python runtime is updated.** The app's own runtime is now Python 3.13.16 with OpenSSL 3.5.9, verified from the binaries. The SpliceAI engine stays on Python 3.11. See [0007](decisions/0007-app-runtime-python-3.13.md).
+
+   **Correction.** An earlier version of this page said the bundled 3.11 runtime "gets no security fixes" because Python 3.11 had no newer macOS binaries. That was too broad:
+   - Python 3.11 still receives security fixes, as source-only releases until October 2027 (3.11.16 in August 2026).
+   - What did not receive them was the bundled build: python.org's last 3.11 macOS binary, 3.11.9, with OpenSSL 3.0.13.
 
 ## Explicitly pending (tracked, not blocking an experimental release)
 

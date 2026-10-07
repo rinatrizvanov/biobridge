@@ -61,4 +61,11 @@ requires = ["toga-cocoa==0.5.7"]
 # The documented minimum (unverified; see the README's platform table). Without it the
 # app would declare the support package's minimum, macOS 11.
 min_os_version = "14.0"
+# The app's own runtime (launcher and local web interface): BeeWare's Python 3.13 support
+# package b16 = python.org macOS framework 3.13.16 with OpenSSL 3.5.9 (verified from the
+# binaries). Briefcase 0.4.5 would otherwise use b15 (3.13.15, OpenSSL 3.0.21). Briefcase picks
+# the Python minor version it runs under, set by .python-version. The SpliceAI engine is a
+# separate Python 3.11 environment (setup/envs.py).
+support_revision = "16"
+support_package_hash = "sha256:29334305ef0e1e7e58198c195c7e3707afe38be9ebf134840b156c369f84f737"
 universal_build = false
