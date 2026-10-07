@@ -18,9 +18,9 @@
 
 ## Interpretation
 
-- Delta scores are predictions. They are not measurements, confidence levels or chances of disease.
+- Delta scores are model predictions, not measurements and not chances of disease. The SpliceAI authors' interpretation of the variant-level score is quoted, with its source, in [interpreting-results.md](interpreting-results.md).
 - No pathogenicity assessment, no prediction of transcript outcomes, and no ACMG criteria.
-- The explanation wording has **not yet had independent expert review**.
+- The explanation wording was checked against the upstream SpliceAI documentation and its history ([wording-review-v0.1.md](wording-review-v0.1.md)). It has **not yet had independent expert review**.
 - Not a diagnostic, and not for clinical decision-making.
 
 ## Platform and installation

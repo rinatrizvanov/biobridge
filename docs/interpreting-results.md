@@ -13,13 +13,13 @@ For each position within 50 nucleotides of a variant, SpliceAI predicts the prob
 | DG | donor gain | largest increase in donor probability |
 | DL | donor loss | largest decrease in donor probability |
 
-Scores range from 0 to 1 and are reported with two decimals. A delta score is a model prediction. It is **not a confidence level and not a chance of disease**, and BioBridge never shows it as a percentage.
+Scores range from 0 to 1 and are reported with two decimals. The SpliceAI authors write that the delta score of a variant, the largest of the four, "can be interpreted as the probability of the variant being splice-altering" (upstream README). It remains a model prediction: **not a measurement and not a chance of disease**. BioBridge never shows it as a percentage.
 
-The SpliceAI paper characterised cutoffs of **0.2** (high recall), **0.5** (recommended) and **0.8** (high precision). BioBridge says which of these the largest masked score reaches. The cutoffs come from the paper; they are not BioBridge's thresholds.
+The SpliceAI paper characterised cutoffs of **0.2** (high recall), **0.5** (recommended) and **0.8** (high precision). BioBridge says which of these the largest masked score reaches. The cutoffs come from the paper; they are not BioBridge's thresholds. The paper (January 2019) predates the masking option, which was added in SpliceAI 1.3 (October 2019), so the cutoffs were characterised before masked scores existed in the released software.
 
 ## Masked and raw scores
 
-The SpliceAI authors recommend **masked** scores for variant interpretation and **raw** scores for studying alternative splicing. BioBridge always shows both.
+The SpliceAI authors recommend **masked** scores for variant interpretation and **raw** scores for studying alternative splicing. They wrote this about their precomputed score files, in the upstream README's FAQ, added in May 2020. BioBridge always shows both.
 
 Masking compares each predicted position with **the single annotated exon boundary nearest the variant** in SpliceAI's GENCODE V24 annotation. It sets to 0:
 - a gain at that boundary, and
@@ -66,7 +66,7 @@ BioBridge rejects inputs whose header indicates GRCh37, or gives conflicting bui
 
 ## What a score does not tell you
 
-SpliceAI does not predict the resulting transcript (exon skipping, intron retention or use of a cryptic site), and a score alone does not establish that a variant is pathogenic or benign. Confirming an effect on splicing needs RNA evidence. BioBridge assigns no ACMG criteria.
+SpliceAI does not predict the resulting transcript (exon skipping, intron retention or use of a cryptic site), and a score alone does not establish that a variant is pathogenic or benign. Confirming an effect on splicing requires experimental evidence, such as RNA analysis. BioBridge assigns no ACMG criteria.
 
 ## The CSV
 

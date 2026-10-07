@@ -1,8 +1,12 @@
 """Deterministic explanations: fixed text plus sentences built from each result row.
 
 Rules (v0.1):
-- A delta score is a change in SpliceAI's predicted splice-site probability, not a
-  confidence level or a chance of disease. Values are never shown as percentages.
+- A delta score is a change in SpliceAI's predicted splice-site probability. The
+  authors' own interpretation of the variant-level score is quoted with attribution;
+  BioBridge adds that it is a model prediction, not a measurement or a chance of
+  disease. Values are never shown as percentages.
+- Wording about SpliceAI is checked against the upstream README and its history
+  (docs/wording-review-v0.1.md).
 - Positions are absolute GRCh38 coordinates with a forward-strand offset; there is
   no upstream/downstream, exon-number or transcript wording.
 - No statement about the resulting transcript, pathogenicity or ACMG criteria. That
@@ -15,27 +19,32 @@ from __future__ import annotations
 
 from biobridge.results import EVENT_NAMES, EVENTS, Row
 
-VERSION = "explanations/1"
+VERSION = "explanations/2"
 
 ABOUT = [
     "SpliceAI predicts, for each position near a variant, the probability that the position is "
     "used as a splice acceptor or donor, once for the reference sequence and once with the variant. "
     "A delta score is the largest change in that probability within ±50 nucleotides of the variant, "
     "separately for acceptor gain (AG), acceptor loss (AL), donor gain (DG) and donor loss (DL). "
-    "It is a model prediction: not a confidence level, and not a chance of disease.",
+    "The SpliceAI authors write that the largest of the four can be interpreted as the probability "
+    "that the variant alters splicing. It remains a model prediction: not a measurement, and not a "
+    "chance of disease.",
     "The SpliceAI paper (Jaganathan et al., Cell 2019) characterised cutoffs of 0.2 (high recall), "
-    "0.5 (recommended) and 0.8 (high precision).",
-    "Masked scores follow the SpliceAI authors' recommendation for variant interpretation. Masking "
-    "sets to 0 a gain at, or a loss away from, the annotated exon boundary nearest the variant in "
-    "SpliceAI's GENCODE V24 annotation. Raw scores are shown alongside because masking can also hide "
-    "a change at another annotated boundary.",
+    "0.5 (recommended) and 0.8 (high precision). BioBridge compares the largest masked score with "
+    "them, although the paper characterised them before masking was added to the SpliceAI software "
+    "(version 1.3, October 2019).",
+    "The SpliceAI authors recommend masked scores for variant interpretation and raw scores for "
+    "analysing alternative splicing. Masking sets to 0 a gain at, or a loss away from, the annotated "
+    "exon boundary nearest the variant in SpliceAI's GENCODE V24 canonical annotation. Raw scores are "
+    "shown alongside because masking can also hide a change at another annotated boundary.",
     "Positions are GRCh38 coordinates on the genome's forward strand; offsets count nucleotides from "
     "the variant along that strand.",
 ]
 LIMITATIONS = (
     "SpliceAI does not predict the resulting transcript (for example exon skipping, intron retention "
     "or use of a cryptic splice site), and a score alone does not establish that a variant is "
-    "pathogenic or benign. Confirming an effect on splicing needs RNA evidence. BioBridge is "
+    "pathogenic or benign. Confirming an effect on splicing requires experimental evidence, such as "
+    "RNA analysis. BioBridge is "
     "experimental research software, not a diagnostic, and assigns no ACMG criteria."
 )
 

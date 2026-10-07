@@ -50,9 +50,15 @@ def test_every_reason_has_plain_text_without_forbidden_claims(code):
 
 def test_fixed_text_carries_the_required_statements():
     about = " ".join(ABOUT)
-    assert "not a confidence level, and not a chance of disease" in about
+    # The authors' interpretation is attributed to them, with BioBridge's caveat.
+    assert ("The SpliceAI authors write that the largest of the four can be interpreted as the "
+            "probability that the variant alters splicing") in about
+    assert "not a measurement, and not a chance of disease" in about
     assert "0.2 (high recall), 0.5 (recommended) and 0.8 (high precision)" in about
-    for phrase in ("exon skipping", "pathogenic or benign", "RNA evidence", "not a diagnostic", "no ACMG"):
+    # The cutoffs predate masking in the released software (SpliceAI 1.3, October 2019).
+    assert "before masking was added to the SpliceAI software (version 1.3, October 2019)" in about
+    assert "recommend masked scores for variant interpretation and raw scores" in about
+    for phrase in ("exon skipping", "pathogenic or benign", "RNA analysis", "not a diagnostic", "no ACMG"):
         assert phrase in LIMITATIONS
 
 
