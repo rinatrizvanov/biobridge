@@ -31,7 +31,7 @@ First usable version. Experimental research software, not a diagnostic; SpliceAI
 ### Known limitations and pending checks
 See `docs/limitations.md` and `docs/release-v0.1.0.md`. Pending:
 - an install on a second Mac, including whether a downloaded copy needs a second approval;
-- GitHub CI results (see `docs/ci.md`); macOS 14 is unverified;
+- macOS 14 compatibility (unverified), and the packaged app on macOS 26;
 - IT-managed Macs;
 - independent expert review of the explanations;
 - ClinVar-based demo inputs;

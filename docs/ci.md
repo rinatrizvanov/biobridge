@@ -11,7 +11,7 @@
 | **Packaged app** | `macos-15` | The whole packaged app on a fresh checkout (steps listed below). |
 
 **Tests job.** Each suite reports on its own:
-1. **Unit and HTTP tests** (`uv run pytest`, 147 tests). They cover:
+1. **Unit and HTTP tests** (`uv run pytest`, 148 tests). They cover:
    - input validation and upload limits, and build evidence;
    - downloads (timeouts, retries, resume, checksums) and engine install retries;
    - the watchdog, and Quit cleanup of child processes;
@@ -69,6 +69,8 @@ The check now reports:
 
 It no longer searches for a bare username. The candidate bundle passes the new rule both as built on the developer's Mac and as if it had been built on a runner. Unit tests cover what must and must not be reported.
 
+**A second bug.** Rehearsing the packaged-app job in a fresh local clone before the first push found one more problem. The check imports BioBridge from the bundle, and on a never-launched build Python then wrote `__pycache__`, with the checkout path, into the bundle it was checking. The check now never writes bytecode, and a test asserts that it leaves the bundle unchanged (`b110133`).
+
 ## Platform coverage
 
 | Platform | Coverage |
@@ -92,7 +94,26 @@ It no longer searches for a bare username. The candidate bundle passes the new r
 
 ## Results
 
-*Not yet run on GitHub.*
+**Run 37650799748**, for the push of `b110133` on 2026-10-07: **every job passed on the first run.** The repository is private: https://github.com/rinatrizvanov/biobridge/actions/runs/37650799748
+
+| Job | Image (operating system) | Result | Duration |
+|---|---|---|---|
+| Lint | `ubuntu-24.04` (Ubuntu 24.04.5) | passed | 10 s |
+| Tests | `macos-15-arm64` (macOS 15.7.9, 24G830) | unit and HTTP: 148 passed; browser: 30 passed; real engine: 28 passed | 8 min 27 s |
+| Tests | `macos-26-arm64` (macOS 26.6.2, 25G83) | unit and HTTP: 148 passed; browser: 30 passed; real engine: 28 passed | 8 min 6 s |
+| Packaged app | `macos-15-arm64` (macOS 15.7.9) | build, ad-hoc signature and bundle check passed; packaged run passed (details below) | 3 min 29 s |
+
+**Packaged-app job:**
+- **Bundle check.** The app records commit `b110133`, no uncommitted changes, and source sha256 `65050cbd…`. That is the same digest as the candidate disk image's, so CI built and ran exactly the candidate's packaged code.
+- **Timings.** First setup took 14.4 s, the pasted variant 9.9 s and the 16-record upload 37.8 s.
+- **Requests.** All 111 stayed on 127.0.0.1, with no failed requests or page errors.
+- **Cancel and Quit.** Cancel left a job with no results. Quit started 9 child processes and left no survivors.
+- **Results.** Both jobs were identical to the development runner.
+
+**The rest of the run:**
+- **Uploads:** none. The run has no artifacts, and the repository has no releases or tags.
+- **Caches:** this first run started with empty caches. The downloads from PyPI, UCSC, BeeWare and Playwright all succeeded.
+- **Minutes:** the job durations add up to about 20 macOS minutes and under 1 Linux minute. GitHub's run-timing API reported 0 billable minutes; the account's billing page shows actual usage.
 
 ## Running the same checks locally
 

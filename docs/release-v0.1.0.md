@@ -110,7 +110,7 @@ Nothing below has been done or verified.
    - Does provenance show the clean commit?
 
    When packaging, Briefcase warns that an ad-hoc-signed app "will run on this computer, but will not run on anyone else's computer". This step is what tests that warning.
-2. **GitHub CI.** `.github/workflows/ci.yml` runs lint, the unit, browser and real-engine suites on macOS 15 and 26, and a packaged-app build and run on macOS 15, uploading nothing. Results and gaps are in [ci.md](ci.md). **macOS 14 compatibility is unverified:** no CI image and no Mac has run it.
+2. **macOS coverage gaps.** **macOS 14 compatibility is unverified:** no CI image and no Mac has run it. The packaged app has not run on macOS 26. GitHub CI itself passes: lint, the unit, browser and real-engine suites on macOS 15.7.9 and 26.6.2, and the packaged app on macOS 15.7.9, all green on the first run with nothing uploaded. Details are in [ci.md](ci.md#results).
 3. **IT-managed Macs** (Jamf, Santa), where Open Anyway may be unavailable.
 4. **Independent expert review** of the explanation wording.
 5. **Demo inputs based on public ClinVar records.** The current test inputs are synthetic variants at real GRCh38 positions.

@@ -59,10 +59,12 @@ Details are in [docs/release-v0.1.0.md](docs/release-v0.1.0.md).
 - A manual checklist run. Its two findings, a clipped chart label and an unknown source revision in the CSV, are fixed,
   and a manual retest passed.
 
+**Passed on GitHub's runners** (private repository): lint, the test suites on macOS 15 and 26, and the packaged app on macOS 15
+([docs/ci.md](docs/ci.md)).
+
 **Still pending:**
 - An install on a second Mac ([checklist](docs/second-mac-checklist-v0.1.md)). This includes whether a downloaded copy needs a second approval.
-- Green GitHub CI runs. The workflow and its recorded results are in [docs/ci.md](docs/ci.md).
-- macOS 14, the documented minimum, is unverified.
+- macOS 14, the documented minimum, is unverified. The packaged app has not run on macOS 26.
 - IT-managed Macs.
 - Independent expert review of the explanations.
 - Demo inputs based on public ClinVar records.
