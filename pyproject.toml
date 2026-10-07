@@ -1,6 +1,6 @@
 [project]
 name = "biobridge"
-version = "0.0.0"
+version = "0.1.0"
 description = "Run selected scientific tools locally through a simple graphical interface (experimental)."
 readme = "README.md"
 license = "Apache-2.0"
@@ -38,7 +38,7 @@ addopts = "-m 'not model and not browser'"
 project_name = "BioBridge"
 # Placeholder reverse-DNS prefix for unreleased builds; choose a real one before any release.
 bundle = "local.biobridge"
-version = "0.0.0"
+version = "0.1.0"
 
 [tool.briefcase.app.biobridge]
 formal_name = "BioBridge"

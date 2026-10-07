@@ -131,15 +131,45 @@ def test_plot_draws_bars_only_for_positive_masked_values_and_labels_masked_zeros
     assert labels == ["0.00", "masked", "0.01", "0.53"]
 
 
-def test_reference_lines_are_labelled_and_axis_is_fixed():
+def test_reference_lines_and_fixed_axis():
+    """Cutoff lines at 0.2/0.5/0.8 on a fixed 0-1 axis; their meaning is in the figure caption."""
     _, root = svg(SCENARIOS["high"])
-    refs = [t.text for t in root.findall(".//s:text[@class='bb-ref']", NS)]
-    assert refs == ["high recall", "recommended", "high precision"]
+    ref_lines = root.findall(".//s:line[@class='bb-ref-line']", NS)
+    assert len(ref_lines) == 3
     ticks = [t.text for t in root.findall(".//s:text[@class='bb-tick']", NS)]
-    assert ticks[:2] == ["0.0", "1.0"] and set(ticks) >= {"0.2", "0.5", "0.8"}
+    assert ticks == ["0.0", "0.2", "0.5", "0.8", "1.0"]
+    ys = {t.text: float(t.get("y")) for t in root.findall(".//s:text[@class='bb-tick']", NS)}
+    assert ys["0.0"] > ys["0.2"] > ys["0.5"] > ys["0.8"] > ys["1.0"]  # 0 at the bottom, 1 at the top
 
 
 def test_missing_values_are_not_drawn():
     assert four_score_svg(NOT_SCORED["COMPLEX_DELINS"], "p1") == ""
     none_row = scored((None,) * 4, dp=(None,) * 4)
     assert four_score_svg(none_row, "p2") == ""
+
+
+# --- geometry: nothing may be clipped at the top or bottom of the plot ----------------
+GLYPH_ASCENT = 0.8  # fraction of the font size above the baseline (Latin text)
+
+
+@pytest.mark.parametrize("values", [(0.0, 0.99, 1.0, 0.5), (1.0, 1.0, 1.0, 1.0), (0.0, 0.0, 0.0, 0.0)])
+def test_labels_and_dots_fit_inside_the_plot(values):
+    _, root = svg(scored(values))
+    width, height = (float(v) for v in root.get("viewBox").split()[2:])
+    for text in root.findall(".//s:text", NS):
+        size = float(text.get("font-size") or 11)
+        y = float(text.get("y"))
+        assert y - GLYPH_ASCENT * size >= 0, f"{text.text!r} clipped at the top (y={y})"
+        assert y + 0.25 * size <= height, f"{text.text!r} clipped at the bottom (y={y})"
+    for dot in root.findall(".//s:circle", NS):
+        cy, r = float(dot.get("cy")), float(dot.get("r"))
+        assert cy - r - 2 >= 0 and cy + r + 2 <= height  # including the 2 px ring
+
+
+def test_tied_largest_scores_name_every_event():
+    row = scored((0.0, 1.0, 1.0, 0.5), dp=(0, 2, -3, 5))
+    first = explain(row)[0]
+    assert first.startswith("The largest masked delta score, 1.00, is shared by 2 events: acceptor loss at "
+                            "chr17:43,057,053, 2 nucleotides after the variant on the forward strand; donor gain at "
+                            "chr17:43,057,048, 3 nucleotides before")
+    assert not FORBIDDEN.search(first)

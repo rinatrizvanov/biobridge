@@ -83,13 +83,18 @@ def explain(row: Row, genes_for_allele: int = 1) -> list[str]:
         return text
 
     text = []
-    best = row.max_masked()
-    if best is None or best[0] == 0.0:
+    top = row.top_masked()
+    if top is None or top[0] == 0.0:
         text.append("All four masked delta scores are 0.00.")
-    else:
-        value, event = best
+    elif len(top[1]) == 1:
+        value, (event,) = top
         text.append(f"The largest masked delta score is {value:.2f}, for {EVENT_NAMES[event]}, at "
                     f"{position_phrase(row, event)}. {band_sentence(value)}")
+    else:
+        value, events = top
+        where = "; ".join(f"{EVENT_NAMES[e]} at {position_phrase(row, e)}" for e in events)
+        text.append(f"The largest masked delta score, {value:.2f}, is shared by {len(events)} events: "
+                    f"{where}. {band_sentence(value)}")
     for event in row.zeros("masked_zero"):
         text.append(f"{EVENT_NAMES[event].capitalize()}: set to 0.00 by SpliceAI's masking; the raw value "
                     f"is {row.raw[event]:.2f}, at {position_phrase(row, event)}.")

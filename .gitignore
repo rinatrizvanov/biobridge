@@ -7,6 +7,9 @@ build/
 dist/
 *.egg-info/
 
+# Generated at build time (source revision for the packaged app)
+src/biobridge/_build_info.json
+
 # Briefcase build cache
 .briefcase/
 
@@ -18,5 +21,11 @@ dist/
 # macOS
 .DS_Store
 
+# R session history (for example docs/.Rhistory)
+.Rhistory
+
 # Personal planning notes (kept locally, never committed)
 Project Idea.docx
+
+# Project-local Claude skills (third-party; installed locally, not committed)
+.claude/

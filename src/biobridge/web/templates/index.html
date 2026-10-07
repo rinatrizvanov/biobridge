@@ -1,26 +1,31 @@
 {% extends "base.html" %}
 {% block main %}
 <h1>Score variants with SpliceAI</h1>
+<p class="bb-lede">Enter one GRCh38 variant, or upload a small VCF file. SpliceAI 1.3.1 scores them on this Mac.</p>
 {% if error %}<p class="bb-error" role="alert">{{ error }}</p>{% endif %}
 {% if running %}<p class="bb-note">A job is running. <a href="/jobs/{{ running.id }}">See its progress</a>.</p>{% endif %}
 <form class="bb-form" method="post" action="/jobs" enctype="multipart/form-data">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <fieldset>
-    <legend>One variant</legend>
-    <label for="variant">GRCh38 position and alleles</label>
-    <input id="variant" name="variant" type="text" autocomplete="off" spellcheck="false" placeholder="{{ example }}">
-    <p class="bb-hint">For example <code>{{ example }}</code> or <code>chr17:43045712 T&gt;G</code>. HGVS, rsIDs and gene names are not accepted.</p>
-  </fieldset>
-  <p class="bb-or">or</p>
-  <fieldset>
-    <legend>A small VCF file</legend>
-    <label for="vcf">VCF or VCF.gz, up to 1 MB and {{ max_alleles }} alleles</label>
-    <input id="vcf" name="vcf" type="file" accept=".vcf,.gz,.vcf.gz,text/plain">
-    <p class="bb-hint">Only CHROM, POS, ID, REF and ALT are used. Sample and genotype columns are removed before anything is stored.</p>
-  </fieldset>
-  <label class="bb-check"><input id="confirm" name="confirm_grch38" type="checkbox" value="yes" required>
-    These coordinates are GRCh38 (hg38).</label>
-  <p class="bb-hint">BioBridge cannot verify the build of an input that does not state it; your confirmation is recorded with the results. GRCh37 (hg19) files are rejected.</p>
+  <div class="bb-inputs">
+    <fieldset class="bb-option">
+      <legend>One variant</legend>
+      <label for="variant">GRCh38 position and alleles</label>
+      <input id="variant" name="variant" type="text" autocomplete="off" spellcheck="false" placeholder="{{ example }}">
+      <p class="bb-hint">For example <code>{{ example }}</code> or <code>chr17:43045712 T&gt;G</code>. HGVS descriptions, rsIDs and gene names are not accepted.</p>
+    </fieldset>
+    <p class="bb-or" aria-hidden="true">or</p>
+    <fieldset class="bb-option">
+      <legend>A small VCF file</legend>
+      <label for="vcf">VCF or VCF.gz, up to 1 MB and {{ max_alleles }} alleles</label>
+      <input id="vcf" name="vcf" type="file" accept=".vcf,.gz,.vcf.gz,text/plain">
+      <p class="bb-hint">Only CHROM, POS, ID, REF and ALT are used. Sample and genotype columns are removed before anything is stored.</p>
+    </fieldset>
+  </div>
+  <div class="bb-confirm">
+    <label class="bb-check"><input id="confirm" name="confirm_grch38" type="checkbox" value="yes" required>
+      <span>These coordinates are GRCh38 (hg38).</span></label>
+    <p class="bb-hint">BioBridge cannot verify the build of an input that does not state it, so your confirmation is recorded with the results. GRCh37 (hg19) files are rejected.</p>
+  </div>
   <button class="bb-button" type="submit" id="run">Run SpliceAI</button>
 </form>
 {% endblock %}

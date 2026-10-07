@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Check a built BioBridge.app before it is shared.
 
-Fails if the signature does not verify, if required files are missing, or if any
-file in the bundle embeds the builder's own home directory or username (for example
+Fails if the signature does not verify, if required files are missing, if the
+Info.plist version differs from biobridge.__version__, or if any file in the bundle embeds the builder's own home directory or username (for example
 in console-script shebangs). Paths from upstream build machines, such as
 /Users/runner/ in third-party wheels, are not ours and are not flagged.
 
@@ -10,6 +10,8 @@ in console-script shebangs). Paths from upstream build machines, such as
 """
 
 import getpass
+import json
+import plistlib
 import subprocess
 import sys
 from pathlib import Path
@@ -30,6 +32,24 @@ def main(app: Path) -> int:
         problems.append(f"signature does not verify: {verify.stderr.strip()}")
     problems += [f"missing {rel}" for rel in REQUIRED if not (app / rel).exists()]
     problems += [f"__pycache__ in bundle: {p.relative_to(app)}" for p in app.rglob("__pycache__")]
+    package = app / "Contents/Resources/app/biobridge"
+    sys.path.insert(0, str(package.parent))
+    from biobridge import __version__
+    from biobridge.buildinfo import BUILD_INFO_NAME, source_digest
+    with open(app / "Contents/Info.plist", "rb") as f:
+        plist = plistlib.load(f)
+    if plist.get("CFBundleShortVersionString") != __version__:
+        problems.append(f"Info.plist version {plist.get('CFBundleShortVersionString')} "
+                        f"differs from biobridge {__version__}")
+    try:
+        info = json.loads((package / BUILD_INFO_NAME).read_text())
+    except (OSError, ValueError):
+        problems.append(f"missing or unreadable {BUILD_INFO_NAME} (build with scripts/build_app.sh)")
+    else:
+        if info.get("source_sha256") != source_digest(package):
+            problems.append("recorded source digest does not match the bundled code")
+        print(f"build info: commit {info.get('commit')}, uncommitted changes {info.get('uncommitted_changes')}, "
+              f"source sha256 {str(info.get('source_sha256'))[:16]}…")
     for path in app.rglob("*"):
         if path.is_file() and not path.is_symlink():
             data = path.read_bytes()

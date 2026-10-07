@@ -22,6 +22,13 @@ EVENTS = ("AG", "AL", "DG", "DL")
 EVENT_NAMES = {"AG": "acceptor gain", "AL": "acceptor loss", "DG": "donor gain", "DL": "donor loss"}
 
 
+def short_allele(allele: str | None, limit: int = 12) -> str:
+    """Display form of an allele: long ones are shortened on screen (the CSV keeps them in full)."""
+    if allele is None:
+        return "NA"
+    return allele if len(allele) <= limit else f"{allele[:6]}…({len(allele)} nt)"
+
+
 def zero_kind(raw: float | None, masked: float | None) -> str | None:
     if raw is None or masked is None:
         return None
@@ -64,9 +71,17 @@ class Row:
         dp = self.dp.get(event)
         return None if dp is None else self.pos + dp
 
-    def max_masked(self) -> tuple[float, str] | None:
-        values = [(v, e) for e, v in self.masked.items() if v is not None]
-        return max(values, key=lambda ve: ve[0]) if values else None
+    def top_masked(self) -> tuple[float, list[str]] | None:
+        """The largest masked delta score and every event that reaches it.
+
+        No event is named when the largest value is 0.00: all four are then tied at
+        zero, and naming one would be arbitrary. None if there are no scores.
+        """
+        values = {e: v for e, v in self.masked.items() if v is not None}
+        if not values:
+            return None
+        top = max(values.values())
+        return top, ([e for e in EVENTS if values.get(e) == top] if top > 0 else [])
 
     def zeros(self, kind: str) -> list[str]:
         return [e for e in EVENTS if zero_kind(self.raw.get(e), self.masked.get(e)) == kind]

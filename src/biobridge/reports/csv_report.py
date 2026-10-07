@@ -14,7 +14,7 @@ from biobridge.results import EVENTS, Row, cutoff_band
 
 NA = "NA"
 PROVENANCE_COLUMNS = [
-    "biobridge_version", "biobridge_commit", "adapter", "spliceai_version", "tensorflow_version",
+    "biobridge_version", "biobridge_commit", "biobridge_source_sha256", "adapter", "spliceai_version", "tensorflow_version",
     "keras_version", "engine_lock_sha256", "models_sha256", "annotation", "annotation_sha256",
     "reference_build", "reference_source", "reference_md5", "max_distance", "score_modes",
     "build_basis", "license_acknowledgment", "job_started", "host", "input_name", "input_sha256",
@@ -47,7 +47,7 @@ def _text(value) -> str:
 
 
 def row_cells(row: Row, provenance: dict) -> dict[str, str]:
-    best = row.max_masked()
+    top = row.top_masked()
     has_scores = any(v is not None for v in row.raw.values())
     masked_zero = [f"{e} (raw {row.raw[e]:.2f})" for e in row.zeros("masked_zero")]
     cells = {
@@ -58,9 +58,10 @@ def row_cells(row: Row, provenance: dict) -> dict[str, str]:
         **{f"DS_{e}_raw": row.raw.get(e) for e in EVENTS},
         **{f"DP_{e}": row.dp.get(e) for e in EVENTS},
         **{f"{e}_position": row.position(e) for e in EVENTS},
-        "max_DS_masked": best[0] if best else None,
-        "max_DS_masked_event": best[1] if best else None,
-        "cutoff_band_masked": cutoff_band(best[0]) if best else None,
+        "max_DS_masked": top[0] if top else None,
+        # "none" when all four masked scores are 0.00; ties list every event.
+        "max_DS_masked_event": ("; ".join(top[1]) or "none") if top else None,
+        "cutoff_band_masked": cutoff_band(top[0]) if top else None,
         # For unscored rows these are NA (not applicable); for scored rows "none" if empty.
         "masked_to_zero": ("; ".join(masked_zero) or "none") if has_scores else None,
         "raw_below_0.005": ("; ".join(row.zeros("rounded_zero")) or "none") if has_scores else None,

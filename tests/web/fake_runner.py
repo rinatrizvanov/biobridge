@@ -6,6 +6,7 @@ shows "MOCK — NOT MODEL OUTPUT". Behaviour is chosen by each record's ID:
 
     (default)              scored, with fixed made-up numbers
     masked_zero            raw acceptor loss 0.24, masked 0.00
+    edge_values            masked = raw = 0.00, 0.99, 1.00, 0.50 (chart layout checks)
     not_scored:<REASON>    not scored with that reason
     slow                   sleeps 60 s (for Cancel tests)
     crash                  emits an error event and exits 1
@@ -59,6 +60,8 @@ def score(request):
                 alleles.append({"alt": alt, "status": "NOT_SCORED", "reason": rid.split(":", 1)[1]})
                 continue
             raw = {"alt": alt, "gene": "FAKEGENE", **MOCK_SCORES}
+            if rid == "edge_values":
+                raw.update(DS_AG=0.0, DS_AL=0.99, DS_DG=1.0, DS_DL=0.5, DP_AG=0, DP_AL=1, DP_DG=-5, DP_DL=12)
             masked = dict(raw, DS_AL=0.0) if rid == "masked_zero" else dict(raw)
             if rid == "masked_zero":
                 raw["DS_AL"] = 0.24

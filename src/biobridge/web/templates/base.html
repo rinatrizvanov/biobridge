@@ -8,15 +8,17 @@
 <script src="/static/app.js" defer></script>
 </head>
 <body>
-<header class="bb-header">
-  <a class="bb-brand" href="/">BioBridge</a>
-  <span class="bb-pill">Experimental research software · not a diagnostic</span>
+<header class="bb-masthead">
+  <div class="bb-masthead-inner">
+    <a class="bb-wordmark" href="/">BioBridge</a>
+    <p class="bb-status">Experimental research software. Not a diagnostic.</p>
+  </div>
 </header>
 <main class="bb-main">
 {% block main %}{% endblock %}
 </main>
 <footer class="bb-footer">
-  <span>BioBridge {{ version }} · SpliceAI runs on this Mac; nothing is sent to a server.</span>
+  <p>BioBridge {{ version }}. SpliceAI runs on this Mac and your variants are not sent anywhere; reference chromosomes are downloaded from UCSC the first time they are needed.</p>
   <form method="post" action="/quit"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="bb-link" type="submit">Quit BioBridge</button></form>
 </footer>
 </body>

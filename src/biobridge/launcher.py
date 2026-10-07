@@ -238,7 +238,14 @@ class BioBridge(toga.App):
             self.log.info("web_ready", extra={"data": {"port": self.server.port}})
             self.set_stage("BioBridge is running. Use it in your browser; keep this window open.")
             self.ui(self._finished)
-            if not os.environ.get("BIOBRIDGE_NO_BROWSER"):
+            link_file = os.environ.get("BIOBRIDGE_AUTH_URL_FILE")
+            if link_file:
+                # Automation aid (set only by whoever launches the app): hand the one-time,
+                # 127.0.0.1-only sign-in link to a test driver instead of opening a browser.
+                fd = os.open(link_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(fd, "w") as fh:
+                    fh.write(self.server.web.auth_url())
+            elif not os.environ.get("BIOBRIDGE_NO_BROWSER"):
                 webbrowser.open(self.server.web.auth_url())
         except Cancelled:
             self.log.info("pipeline_cancelled")

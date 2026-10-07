@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import expect
 
 from biobridge.genome import HG38_MD5
 from biobridge.inputs.upload import MAX_VCF_BYTES
@@ -24,14 +24,6 @@ from tests.web.conftest import make_manager, wait_for
 
 pytestmark = pytest.mark.browser
 VCF_HEADER = "##fileformat=VCFv4.2\n##contig=<ID=chr17>\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
-
-
-@pytest.fixture(scope="module", params=["chromium", "webkit"])
-def browser(request):
-    with sync_playwright() as p:
-        b = getattr(p, request.param).launch()
-        yield b
-        b.close()
 
 
 def start_server(manager: JobManager) -> WebServer:

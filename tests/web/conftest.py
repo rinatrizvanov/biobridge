@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 import pytest
+from playwright.sync_api import sync_playwright
 
 from biobridge.web.app import BioBridgeWeb
 from biobridge.web.jobs import JobManager
@@ -38,3 +39,12 @@ def wait_for(predicate, timeout=20.0):
             return True
         time.sleep(0.05)
     return predicate()
+
+
+@pytest.fixture(scope="module", params=["chromium", "webkit"])
+def browser(request):
+    """A real browser per test module, once for Chromium and once for WebKit."""
+    with sync_playwright() as p:
+        b = getattr(p, request.param).launch()
+        yield b
+        b.close()

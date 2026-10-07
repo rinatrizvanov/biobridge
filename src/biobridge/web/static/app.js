@@ -22,7 +22,9 @@
     window.setTimeout(poll, 400);
   }
 
-  // --- Chart tooltips (values are also in the table beside each chart) ----------------
+  // --- Chart tooltips (the same values are in the table under each chart) -------------
+  const MARGIN = 8;   // distance from the window edges
+  const GAP = 10;     // distance from the event being described
   const tip = document.createElement("div");
   tip.className = "bb-tooltip";
   tip.hidden = true;
@@ -44,26 +46,41 @@
     return div;
   }
 
+  let active = null;   // the event whose values are showing
+
   function show(mark) {
+    active = mark;
     tip.replaceChildren();
     const title = document.createElement("div");
+    title.className = "bb-tip-title";
     title.textContent = mark.dataset.event;
-    tip.append(title, row("bb-key-1", mark.dataset.masked, "masked"), row("bb-key-2", mark.dataset.raw, "raw"));
     const where = document.createElement("div");
     where.className = "bb-tip-sub";
     where.textContent = mark.dataset.position;
-    tip.append(where);
+    tip.append(title, row("bb-key-1", mark.dataset.masked, "masked"), row("bb-key-2", mark.dataset.raw, "raw"), where);
     tip.hidden = false;
-    const box = mark.getBoundingClientRect();
-    const left = Math.min(window.innerWidth - tip.offsetWidth - 8, Math.max(8, box.left + box.width / 2 - tip.offsetWidth / 2));
-    tip.style.left = `${left}px`;
-    tip.style.top = `${Math.max(8, box.top - tip.offsetHeight - 6)}px`;
+    place(mark);
   }
 
-  function hide() { tip.hidden = true; }
+  function place(mark) {
+    const box = mark.getBoundingClientRect();
+    const width = tip.offsetWidth, height = tip.offsetHeight;
+    const left = Math.min(window.innerWidth - width - MARGIN, Math.max(MARGIN, box.left + box.width / 2 - width / 2));
+    let top = box.top - height - GAP;                       // above the event if it fits
+    if (top < MARGIN) top = Math.min(box.bottom + GAP, window.innerHeight - height - MARGIN);
+    tip.style.left = `${Math.max(MARGIN, left)}px`;
+    tip.style.top = `${Math.max(MARGIN, top)}px`;
+  }
+
+  function hide() { tip.hidden = true; active = null; }
+  // The tooltip is fixed to the window, so follow the event when the page scrolls or resizes.
+  const follow = () => { if (active && !tip.hidden) place(active); };
 
   document.addEventListener("pointerover", (e) => { const m = e.target.closest(".bb-mark"); if (m) show(m); });
   document.addEventListener("pointerout", (e) => { if (e.target.closest(".bb-mark")) hide(); });
   document.addEventListener("focusin", (e) => { const m = e.target.closest(".bb-mark"); if (m) show(m); });
   document.addEventListener("focusout", (e) => { if (e.target.closest(".bb-mark")) hide(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
+  window.addEventListener("scroll", follow, { passive: true });
+  window.addEventListener("resize", follow);
 })();

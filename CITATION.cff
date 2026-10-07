@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: >-
+  If you use BioBridge, please also cite SpliceAI (Jaganathan et al., Cell 2019,
+  doi:10.1016/j.cell.2018.12.015), and give the BioBridge source revision recorded
+  in your results CSV (column biobridge_commit).
+title: BioBridge
+abstract: >-
+  A macOS application that runs the unmodified SpliceAI model locally on small sets
+  of GRCh38 variants through a browser interface, with masked and raw scores,
+  deterministic explanations and provenance-complete CSV export. Experimental
+  research software; not a diagnostic.
+type: software
+version: 0.1.0
+license: Apache-2.0
+authors:
+  - alias: rinatrizvanov
+keywords:
+  - SpliceAI
+  - splicing
+  - variant effect prediction
+  - bioinformatics
+  - macOS

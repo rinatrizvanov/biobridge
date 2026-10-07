@@ -28,3 +28,9 @@ def test_shipped_code_never_references_the_fake_engine_or_sets_mock():
 def test_packaged_sources_exclude_tests():
     config = tomllib.loads((REPO / "pyproject.toml").read_text())
     assert config["tool"]["briefcase"]["app"]["biobridge"]["sources"] == ["src/biobridge"]
+
+
+def test_version_is_the_same_everywhere():
+    from biobridge import __version__
+    config = tomllib.loads((REPO / "pyproject.toml").read_text())
+    assert config["project"]["version"] == config["tool"]["briefcase"]["version"] == __version__

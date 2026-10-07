@@ -17,36 +17,39 @@
   <p><a class="bb-button" href="/">Start again</a></p>
 {% elif job.status == "cancelled" %}
   <h1>Cancelled</h1>
-  <p>The job was cancelled and its engine processes were stopped. No results were saved for display.</p>
+  <p class="bb-lede">The job was cancelled and its engine processes were stopped. No results were saved for display.</p>
   <p><a class="bb-button" href="/">Start again</a></p>
 {% else %}
+  {% set scored = summary.by_status.get("SCORED", 0) %}{% set unscored = summary.by_status.get("NOT_SCORED", 0) %}{% set errors = summary.by_status.get("ERROR", 0) %}
   <h1>Results</h1>
-  <p class="bb-summary">
-    {{ provenance.input_name }} · {{ summary.alleles }} allele{{ "s" if summary.alleles != 1 }}:
-    {{ summary.by_status.get("SCORED", 0) }} scored{% if summary.by_status.get("NOT_SCORED") %}, {{ summary.by_status["NOT_SCORED"] }} not scored{% endif %}{% if summary.by_status.get("ERROR") %}, {{ summary.by_status["ERROR"] }} with errors{% endif %}.
-  </p>
+  <p class="bb-lede">{% if provenance.input_name == "pasted variant" %}Pasted variant{% else %}{{ provenance.input_name }}{% endif %}: {{ summary.alleles }} allele{{ "s" if summary.alleles != 1 }}, {{ scored }} scored{% if unscored %}, {{ unscored }} not scored{% endif %}{% if errors %}, {{ errors }} with errors{% endif %}.</p>
   <p class="bb-note">
   {% if provenance.build_basis == "user_confirmed_and_header_agrees" %}Genome build: GRCh38, as you confirmed; the file's header agrees.
   {% else %}Genome build: GRCh38, as you confirmed. The input does not state a genome build, so BioBridge cannot verify it.{% endif %}
   </p>
   {% if summary.many_ref_mismatches %}<p class="bb-warning" role="alert">Many variants do not match the GRCh38 reference. The coordinates may come from another genome build.</p>{% endif %}
-  <p><a class="bb-button" id="download" href="/jobs/{{ job.id }}/results.csv" download>Download CSV</a> <a class="bb-link" href="/">Score more variants</a></p>
+  <div class="bb-actions">
+    <a class="bb-button" id="download" href="/jobs/{{ job.id }}/results.csv" download>Download CSV</a>
+    <a class="bb-link" href="/">Score more variants</a>
+  </div>
 
+  <h2>All alleles</h2>
   <div class="bb-table-wrap">
   <table class="bb-table">
-    <caption>Masked delta scores, with raw values in brackets. NA means not available.</caption>
-    <thead><tr><th>#</th><th>Variant</th><th>Gene</th><th>Status</th><th>Largest masked</th>
-      {% for e in ["AG", "AL", "DG", "DL"] %}<th><abbr title="{{ event_names[e] }}">{{ e }}</abbr></th>{% endfor %}</tr></thead>
+    <caption>Each score cell shows the masked delta score, with the raw score below it. NA means not available.</caption>
+    <thead><tr><th scope="col">Record</th><th scope="col">Variant</th><th scope="col">Gene</th><th scope="col">Status</th>
+      <th scope="col" class="bb-num">Largest masked</th>
+      {% for e in ["AG", "AL", "DG", "DL"] %}<th scope="col" class="bb-num"><abbr title="{{ event_names[e] }}">{{ e }}</abbr></th>{% endfor %}</tr></thead>
     <tbody>
     {% for v in views %}{% set r = v.row %}
       <tr>
-        <td>{{ r.record }}</td>
-        <td><a href="#{{ v.uid }}">{{ r.chrom }}:{{ "{:,}".format(r.pos) }} {{ r.ref }}&gt;{{ r.alt if r.alt is not none else "NA" }}</a></td>
+        <td class="bb-num">{{ r.record }}</td>
+        <td><a href="#{{ v.uid }}">{{ r.chrom }}:{{ "{:,}".format(r.pos) }} {{ r.ref|allele }}&gt;{{ r.alt|allele }}</a></td>
         <td>{{ r.gene or "NA" }}</td>
-        <td>{% if r.status == "SCORED" %}Scored{% elif r.status == "ERROR" %}Error{% else %}Not scored{% endif %}</td>
-        <td>{% if v.best %}{{ "%.2f"|format(v.best[0]) }} {{ v.best[1] }}{% else %}NA{% endif %}</td>
+        <td>{% if r.status == "SCORED" %}Scored{% elif r.status == "ERROR" %}<span class="bb-status-not">Error</span>{% else %}<span class="bb-status-not">Not scored</span>{% endif %}</td>
+        <td class="bb-num">{% if v.top %}{{ "%.2f"|format(v.top[0]) }}{% if v.top[1] %} <span class="bb-muted">{{ v.top[1]|join(", ") }}</span>{% endif %}{% else %}NA{% endif %}</td>
         {% for e in ["AG", "AL", "DG", "DL"] %}
-        <td class="bb-num">{% if r.masked.get(e) is not none %}{{ "%.2f"|format(r.masked[e]) }} ({{ "%.2f"|format(r.raw[e]) }}){% else %}NA{% endif %}</td>
+        <td class="bb-num">{% if r.masked.get(e) is not none %}{{ "%.2f"|format(r.masked[e]) }}<span class="bb-raw">raw {{ "%.2f"|format(r.raw[e]) }}</span>{% else %}NA{% endif %}</td>
         {% endfor %}
       </tr>
     {% endfor %}
@@ -55,36 +58,45 @@
   </div>
 
   {% for v in views %}{% set r = v.row %}
-  <article class="bb-variant" id="{{ v.uid }}">
-    <h2>{{ r.record }}. {{ r.chrom }}:{{ "{:,}".format(r.pos) }} {{ r.ref }}&gt;{{ r.alt if r.alt is not none else "NA" }}{% if r.gene %} · {{ r.gene }}{% endif %}{% if r.input_id and r.input_id not in ("pasted",) %} <span class="bb-muted">({{ r.input_id }})</span>{% endif %}</h2>
-    {% for sentence in v.explanation %}<p>{{ sentence }}</p>{% endfor %}
-    {% if v.plot %}
-    <div class="bb-chart">
-      <ul class="bb-legend">
-        <li><span class="bb-swatch bb-swatch-bar"></span>Masked delta score (bar)</li>
-        <li><span class="bb-swatch bb-swatch-dot"></span>Raw delta score (dot)</li>
-      </ul>
-      {{ v.plot|safe }}
+  <section class="bb-variant" id="{{ v.uid }}" aria-labelledby="{{ v.uid }}-h">
+    <header class="bb-variant-head">
+      <h2 id="{{ v.uid }}-h">Record {{ r.record }}: {{ r.chrom }}:{{ "{:,}".format(r.pos) }} {{ r.ref|allele }}&gt;{{ r.alt|allele }}</h2>
+      <p>{% if r.gene %}{{ r.gene }} in SpliceAI's annotation{% else %}No gene{% endif %}{% if r.input_id and r.input_id != "pasted" %}; input ID {{ r.input_id }}{% endif %}</p>
+    </header>
+    <div class="bb-variant-body">
+      <div class="bb-explanation">
+        {% for sentence in v.explanation %}<p>{{ sentence }}</p>{% endfor %}
+      </div>
+      {% if v.plot %}
+      <figure class="bb-figure">
+        <ul class="bb-legend">
+          <li><span class="bb-swatch bb-swatch-bar"></span>Masked delta score (bar)</li>
+          <li><span class="bb-swatch bb-swatch-dot"></span>Raw delta score (dot)</li>
+        </ul>
+        {{ v.plot|safe }}
+        <figcaption><strong>Delta scores, record {{ r.record }}.</strong> Hairlines mark the 0.2 (high recall), 0.5 (recommended) and 0.8 (high precision) cutoffs characterised in the SpliceAI paper. Hover over or tab to an event for its values, which are also listed below.</figcaption>
+      </figure>
+      {% endif %}
     </div>
+    {% if v.events %}
     <div class="bb-table-wrap">
     <table class="bb-table bb-events">
-      <caption>The values in the chart</caption>
-      <thead><tr><th>Event</th><th>Masked</th><th>Raw</th><th>Offset (nt)</th><th>Position</th></tr></thead>
+      <caption>Values in the chart for record {{ r.record }}. Offsets count nucleotides from the variant along the forward strand.</caption>
+      <thead><tr><th scope="col">Event</th><th scope="col" class="bb-num">Masked</th><th scope="col" class="bb-num">Raw</th><th scope="col">Position (offset)</th></tr></thead>
       <tbody>{% for ev in v.events %}
-        <tr><td>{{ ev.name }} ({{ ev.event }})</td>
+        <tr><td>{{ ev.name|capitalize }} <span class="bb-muted">{{ ev.event }}</span></td>
           <td class="bb-num">{{ "%.2f"|format(ev.masked) if ev.masked is not none else "NA" }}</td>
           <td class="bb-num">{{ "%.2f"|format(ev.raw) if ev.raw is not none else "NA" }}</td>
-          <td class="bb-num">{{ "%+d"|format(ev.offset) if ev.offset is not none else "NA" }}</td>
-          <td>{{ r.chrom ~ ":" ~ "{:,}".format(ev.position) if ev.position is not none else "NA" }}</td></tr>
+          <td>{% if ev.position is not none %}{{ r.chrom }}:{{ "{:,}".format(ev.position) }} <span class="bb-muted bb-offset">({{ "%+d"|format(ev.offset) }} nt)</span>{% else %}NA{% endif %}</td></tr>
       {% endfor %}</tbody>
     </table>
     </div>
     {% endif %}
-  </article>
+  </section>
   {% endfor %}
 
-  <section class="bb-about">
-    <h2>About these scores</h2>
+  <section class="bb-about" aria-labelledby="about-h">
+    <h2 id="about-h">About these scores</h2>
     {% for p in about %}<p>{{ p }}</p>{% endfor %}
     <p class="bb-limits"><strong>Limitations.</strong> {{ limitations }}</p>
   </section>
@@ -92,17 +104,17 @@
   <details class="bb-provenance">
     <summary>Provenance</summary>
     <dl>
-      <dt>BioBridge</dt><dd>{{ provenance.biobridge_version }} ({{ provenance.biobridge_commit }})</dd>
+      <dt>BioBridge</dt><dd>{{ provenance.biobridge_version }}, source revision <code>{{ provenance.biobridge_commit }}</code></dd>
+      <dt>BioBridge source (sha256)</dt><dd><code>{{ provenance.biobridge_source_sha256 }}</code></dd>
       <dt>Engine</dt><dd>spliceai {{ provenance.spliceai_version }}, TensorFlow {{ provenance.tensorflow_version }}, Keras {{ provenance.keras_version }}, Python {{ provenance.engine_python }}</dd>
       <dt>Engine lock (sha256)</dt><dd><code>{{ provenance.engine_lock_sha256 }}</code></dd>
       <dt>Models (sha256)</dt><dd><code>{{ provenance.models_sha256 }}</code></dd>
-      <dt>Annotation</dt><dd>{{ provenance.annotation }}, sha256 <code>{{ provenance.annotation_sha256 }}</code></dd>
-      <dt>Reference</dt><dd>{{ provenance.reference_build }}:
-        {% for c, md5 in provenance.reference_md5s.items() %}{{ c }} md5 <code>{{ md5 }}</code>{{ "; " if not loop.last }}{% endfor %}</dd>
-      <dt>Settings</dt><dd>maximum distance {{ provenance.max_distance }}; {{ provenance.score_modes }}</dd>
+      <dt>Annotation</dt><dd>{{ provenance.annotation }}; sha256 <code>{{ provenance.annotation_sha256 }}</code></dd>
+      <dt>Reference</dt><dd>{{ provenance.reference_build }}{% for c, md5 in provenance.reference_md5s.items() %}; {{ c }} md5 <code>{{ md5 }}</code>{% endfor %}</dd>
+      <dt>Settings</dt><dd>Maximum distance {{ provenance.max_distance }}; {{ provenance.score_modes }}</dd>
       <dt>Genome build basis</dt><dd>{{ provenance.build_basis }}</dd>
       <dt>License acknowledgment</dt><dd>{{ provenance.license_acknowledgment }}</dd>
-      <dt>Input</dt><dd>{{ provenance.input_name }}, sha256 <code>{{ provenance.input_sha256 }}</code></dd>
+      <dt>Input</dt><dd>{{ provenance.input_name }}; sha256 <code>{{ provenance.input_sha256 }}</code></dd>
       <dt>Started</dt><dd>{{ provenance.job_started }} on {{ provenance.host }}</dd>
     </dl>
   </details>

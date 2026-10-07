@@ -121,3 +121,31 @@ def test_summary_counts_alleles_not_gene_rows():
     assert summary["by_status"] == {"SCORED": 3, "NOT_SCORED": 2}
     assert summary["by_reason"] == {"COMPLEX_DELINS": 1, "REF_MISMATCH": 1}
     assert summary["many_ref_mismatches"] is False
+
+
+def test_long_alleles_are_shortened_on_screen_only():
+    from biobridge.results import short_allele
+    assert short_allele("ACGTACGTACGT") == "ACGTACGTACGT"  # 12 bases: unchanged
+    assert short_allele("A" * 102) == "AAAAAA…(102 nt)"
+    assert short_allele(None) == "NA"
+
+
+def test_largest_masked_names_no_event_when_all_are_zero_and_every_event_when_tied():
+    from biobridge.results import Row
+    zeros = Row(record=1, input_id=None, chrom="chr17", pos=1, ref="A", alt="G", status="SCORED",
+                masked=dict(AG=0.0, AL=0.0, DG=0.0, DL=0.0), raw=dict(AG=0.0, AL=0.0, DG=0.23, DL=0.0))
+    assert zeros.top_masked() == (0.0, [])
+    tied = Row(record=1, input_id=None, chrom="chr17", pos=1, ref="A", alt="G", status="SCORED",
+               masked=dict(AG=0.0, AL=1.0, DG=1.0, DL=0.5), raw=dict(AG=0.0, AL=1.0, DG=1.0, DL=0.5))
+    assert tied.top_masked() == (1.0, ["AL", "DG"])
+    assert Row(record=1, input_id=None, chrom="chr17", pos=1, ref="A", alt="G", status="NOT_SCORED").top_masked() is None
+
+
+def test_csv_reports_none_for_an_all_zero_row(tmp_path):
+    results = {"records": [{"index": 0, "id": "z", "chrom": "chr17", "pos": 10, "ref": "T", "alts": ["C"], "alleles": [
+        {"alt": "C", "status": "SCORED", "genes": [{"gene": "G",
+         "raw": upstream("C", "G", (0.0, 0.01, 0.23, 0.0), DP), "masked": upstream("C", "G", (0.0, 0.0, 0.0, 0.0), DP)}]}]}]}
+    path = write_csv(rows_from_results(results), PROVENANCE, tmp_path / "z.csv")
+    (row,) = list(csv.DictReader(path.open()))
+    assert (row["max_DS_masked"], row["max_DS_masked_event"], row["cutoff_band_masked"]) == ("0.00", "none", "below 0.2")
+    assert row["masked_to_zero"] == "AL (raw 0.01); DG (raw 0.23)"

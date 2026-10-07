@@ -52,8 +52,8 @@ def test_pasted_variant_end_to_end(home, engine_bin):
 
 def test_uploaded_vcf_with_genotypes_end_to_end(home, engine_bin, model_data):
     lines = (model_data / "runner_vs_cli_grch38.vcf").read_text().splitlines()
-    with_samples = [l + "\tFORMAT\tPATIENT" if l.startswith("#CHROM") else
-                    l if l.startswith("#") else l + "\tGT\t0/1" for l in lines]
+    with_samples = [ln + "\tFORMAT\tPATIENT" if ln.startswith("#CHROM") else
+                    ln if ln.startswith("#") else ln + "\tGT\t0/1" for ln in lines]
     data = gzip.compress(("\n".join(with_samples) + "\n").encode())
     result = job(home, engine_bin, vcf_bytes=data, vcf_name="fixture.vcf.gz", confirm_grch38=True)
 

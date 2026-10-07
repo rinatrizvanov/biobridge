@@ -3,31 +3,24 @@
 from __future__ import annotations
 
 import platform
-import subprocess
 
-from biobridge import __version__, paths
+from biobridge import __version__, buildinfo, paths
 
 REPO = paths.PACKAGE.parent.parent
 
 
 def biobridge_commit() -> str:
-    """The git commit, only when running from a source checkout.
+    """The source revision and whether packaged files had uncommitted changes.
 
-    The packaged app never calls git: on a Mac without developer tools, /usr/bin/git
-    opens an "install command line tools" dialog.
+    From a source checkout git is asked directly. The packaged app reads what
+    scripts/build_app.sh recorded at build time and never calls git.
     """
-    if not (REPO / ".git").exists():
+    if (REPO / ".git").exists():
+        return buildinfo.describe(*buildinfo.git_state(REPO))
+    recorded = buildinfo.read(paths.PACKAGE)
+    if recorded is None:
         return "unknown"
-    try:
-        head = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--short=12", "HEAD"],
-                              capture_output=True, text=True, timeout=5)
-        dirty = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain", "--untracked-files=no"],
-                               capture_output=True, text=True, timeout=5)
-    except (OSError, subprocess.TimeoutExpired):
-        return "unknown"
-    if head.returncode:
-        return "unknown"
-    return head.stdout.strip() + ("+uncommitted changes" if dirty.stdout.strip() else "")
+    return buildinfo.describe(recorded.get("commit", "unknown"), recorded.get("uncommitted_changes"))
 
 
 def host() -> str:
@@ -35,4 +28,5 @@ def host() -> str:
 
 
 def build_info() -> dict:
-    return {"biobridge_version": __version__, "biobridge_commit": biobridge_commit(), "host": host()}
+    return {"biobridge_version": __version__, "biobridge_commit": biobridge_commit(),
+            "biobridge_source_sha256": buildinfo.source_digest(paths.PACKAGE), "host": host()}

@@ -32,7 +32,7 @@ from biobridge.explain import ABOUT, LIMITATIONS, event_table, explain
 from biobridge.inputs.text import EXAMPLE, InputError, parse_variant
 from biobridge.inputs.upload import MAX_UPLOAD_BYTES, prepare_upload
 from biobridge.jobs.job import MAX_ALLELES, JobRequest
-from biobridge.results import EVENT_NAMES, cutoff_band
+from biobridge.results import EVENT_NAMES, cutoff_band, short_allele
 from biobridge.web.jobs import Busy, JobManager
 from biobridge.web.plot import four_score_svg
 
@@ -63,6 +63,7 @@ class BioBridgeWeb:
         self.templates = Jinja2Templates(directory=str(HERE / "templates"))
         self.templates.env.globals.update(version=__version__, example=EXAMPLE, max_alleles=MAX_ALLELES,
                                           event_names=EVENT_NAMES, csrf=self.csrf)
+        self.templates.env.filters["allele"] = short_allele
         self.app = Starlette(routes=[
             Route("/auth", self.auth),
             Route("/", self.index),
@@ -185,10 +186,10 @@ def results_context(result) -> dict:
         genes_per_allele[key] = genes_per_allele.get(key, 0) + (1 if row.gene else 0)
     views = []
     for i, row in enumerate(rows):
-        best = row.max_masked()
+        top = row.top_masked()
         views.append({
             "row": row, "uid": f"r{i}",
-            "best": best, "band": cutoff_band(best[0]) if best else None,
+            "top": top, "band": cutoff_band(top[0]) if top else None,
             "explanation": explain(row, genes_per_allele.get((row.record, row.alt), 1)),
             "events": event_table(row) if row.gene and row.status == "SCORED" else [],
             "plot": four_score_svg(row, f"p{i}") if row.status == "SCORED" else "",

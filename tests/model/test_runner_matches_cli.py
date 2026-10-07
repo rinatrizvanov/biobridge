@@ -231,7 +231,7 @@ def test_multiallelic_alts_are_scored_independently(comparison, engine_bin, runn
     # The fixture must keep at least one record mixing supported and unsupported ALTs.
     assert any({a["status"] for a in r["alleles"]} == {"SCORED", "NOT_SCORED"} for r in records)
 
-    header = [l for l in (model_data / FIXTURE).read_text().splitlines() if l.startswith("#")]
+    header = [ln for ln in (model_data / FIXTURE).read_text().splitlines() if ln.startswith("#")]
     body = [f"{r['chrom']}\t{r['pos']}\t{r['id']}:{alt}\t{r['ref']}\t{alt}\t.\t.\t."
             for r in records for alt in r["alts"]]
     split_vcf = tmp_path / "split.vcf"
