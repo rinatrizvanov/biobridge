@@ -112,7 +112,7 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
 ### Before the source repository is made public
 
 1. **Your decision: the email address in the history.** All commits carry the author address `[personal address removed]`, so making the repository public publishes it. Changing it means rewriting the history, which changes every commit SHA, including `def7e9f`, the commit the candidate app records.
-2. **A green CI run on the commit to be published** (see [ci.md](ci.md#results)).
+2. **A green CI run on the last code commit before publishing.** `55316c0` is green ([ci.md](ci.md#results)). Documentation-only commits after it skip CI.
 3. **At release time:**
    - set `date-released` in `CITATION.cff` and the date in `CHANGELOG.md`;
    - tag `v0.1.0`;

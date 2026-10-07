@@ -95,7 +95,27 @@ It no longer searches for a bare username. The candidate bundle passes the new r
 
 ## Results
 
-**Run 37650799748**, for the push of `b110133` on 2026-10-07: **every job passed on the first run.** The repository is private: https://github.com/rinatrizvanov/biobridge/actions/runs/37650799748
+**Run 37657592890**, for the push of `55316c0` on 2026-10-07: **every job passed.** Every step succeeded, and the run uploaded no artifacts.
+
+| Job | Operating system | Result | Duration |
+|---|---|---|---|
+| Lint | Ubuntu 24.04.5 | passed | 7 s |
+| Tests | macOS 15.7.9 (24G830) | unit and HTTP: 150 passed; browser: 30 passed; real engine: 28 passed | 7 min 26 s |
+| Tests | macOS 26.6.2 (25G83) | unit and HTTP: 150 passed; browser: 30 passed; real engine: 28 passed | 8 min 9 s |
+| Packaged app | macOS 15.7.9 | build and the stricter bundle check passed; the packaged run passed | 3 min 7 s |
+
+**Packaged-app job:**
+- **The build:**
+  - commit `55316c0`, with no uncommitted changes;
+  - identifier `io.github.rinatrizvanov.biobridge` and minimum macOS 14.0;
+  - the shipped license texts present.
+- **The packaged run:**
+  - first setup took 14.3 s, the pasted variant 11.8 s and the upload 41.2 s;
+  - all 114 requests stayed on 127.0.0.1;
+  - no process survived Quit;
+  - both jobs were identical to the runner.
+
+**Earlier run 37650799748**, for the push of `b110133` on 2026-10-07: **every job passed on the first run.** The repository is private: https://github.com/rinatrizvanov/biobridge/actions/runs/37650799748
 
 | Job | Image (operating system) | Result | Duration |
 |---|---|---|---|
