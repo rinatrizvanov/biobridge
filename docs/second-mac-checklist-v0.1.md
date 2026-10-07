@@ -11,7 +11,12 @@ This checklist takes about 20 minutes. It tests BioBridge as a user would get it
 
 **Getting the disk image there.** Put `dist/BioBridge-0.1.0.dmg` somewhere private that you control, shared with nobody: for example your own cloud storage. Do not post it publicly. Then download it **with a browser** (Safari or Chrome) on the second Mac, so macOS treats it as downloaded. Copying it over a cable, a network share or a USB drive does not test that.
 
-The expected commit, source sha256 and disk-image checksum are recorded in [release-v0.1.0.md](release-v0.1.0.md), under *The candidate build*.
+The expected values are recorded in [release-v0.1.0.md](release-v0.1.0.md), under *The candidate build*:
+- the packaged source commit, `def7e9fe9bc698a1c7fac0cb282a0b35af557660`;
+- the source sha256;
+- the disk-image checksum.
+
+The CSV shows the packaged source commit, not the repository's latest commit: later commits change only documentation or CI.
 
 | # | Step | Expected | Record |
 |---|---|---|---|
@@ -22,7 +27,7 @@ The expected commit, source sha256 and disk-image checksum are recorded in [rele
 | 5 | Open BioBridge from Applications. | Either the BioBridge window opens, or *"BioBridge" Not Opened* appears. If it appears, click **Done**, then **Open Anyway** next to *"BioBridge" was blocked…* in Privacy & Security, confirm and authenticate. | **was a second approval needed?** |
 | 6 | Read the license notice, tick the confirmation, and click **Start BioBridge**. | The window shows setup progress and then *BioBridge is running*. Your browser opens BioBridge. Setup takes about a minute on a fast connection. | setup time; any "retrying" or error text |
 | 7 | Paste `chr17-43057051-C-T`, tick **These coordinates are GRCh38 (hg38).**, and click **Run SpliceAI**. | The first run also downloads chr17. Results show *Scored* and *Largest masked* `0.99 DL`. In the chart, the 0.99 label is fully visible. The value table reads AG 0.00, AL 0.00, DG 0.02, DL 0.99, masked and raw alike. | time to results |
-| 8 | Click **Download CSV** and open the file in TextEdit. | `biobridge_commit` is the recorded 40-character commit with **no** `+uncommitted changes`. `biobridge_source_sha256` is the recorded value. `DS_DL_masked` is `0.99`. | match? |
+| 8 | Click **Download CSV** and open the file in TextEdit. | `biobridge_commit` is `def7e9fe9bc698a1c7fac0cb282a0b35af557660`, with **no** `+uncommitted changes`. `biobridge_source_sha256` is the recorded value. `DS_DL_masked` is `0.99`. | match? |
 | 9 | Click **Quit BioBridge** on the page. Then open **Activity Monitor** and search for `BioBridge`. | The page says *BioBridge is quitting*, the BioBridge window closes, and Activity Monitor lists no BioBridge process. | |
 | 10 | Copy `~/Library/Logs/BioBridge/launcher.log` and the CSV back to the first Mac. | I check setup, the job and Quit cleanup from the log, and compare the CSV with the SpliceAI runner, without changing anything. | |
 

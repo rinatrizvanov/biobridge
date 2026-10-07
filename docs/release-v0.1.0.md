@@ -4,14 +4,24 @@
 
 ## The candidate build
 
-The candidate is built with `scripts/build_app.sh` from the M3 commit, with no uncommitted changes in the packaged paths (`src/`, `pyproject.toml`, `uv.lock`).
+Built with `scripts/build_app.sh` on 2026-10-07, with no uncommitted changes in the packaged paths (`src/`, `pyproject.toml` and `uv.lock`).
+
+**Two commits, two roles:**
+- **Packaged source commit: `def7e9f`** (M3). The candidate app was built from it and records it in every CSV as `biobridge_commit`.
+- **Later commits**, starting with the documentation commit that added this page's evidence, change only documentation or CI files and no packaged path. They are not in the app and never appear in its provenance. Check with `git diff --stat def7e9f HEAD -- src pyproject.toml uv.lock`: no output means the repository's packaged source is still exactly what the candidate contains.
+- **Rebuilding from a later commit** would record that later commit and produce a different disk image. The candidate is the one below.
 
 | Item | Value |
 |---|---|
-| Source revision recorded in the app | *recorded after building from the M3 commit* |
-| Source sha256 recorded in the app | *recorded after building from the M3 commit* |
-| Disk image `dist/BioBridge-0.1.0.dmg` | *size and sha256 recorded after building from the M3 commit* |
-| App | `BioBridge.app`, arm64, ad-hoc signed, about 167 MB; `Info.plist` version 0.1.0 |
+| Packaged source commit, recorded in the app | `def7e9fe9bc698a1c7fac0cb282a0b35af557660` (no uncommitted changes) |
+| Source sha256 recorded in the app | `65050cbda1fcfffc258cdfa122879d8fde57aca0cf5bcd7b96fe7797ee5fefa8` |
+| Disk image `dist/BioBridge-0.1.0.dmg` | 51,135,779 bytes, sha256 `bdbc41a934ab36fd7f769c1f6a8c96e3c6b5f11ed0054c6f941e0f2b9b974f90` |
+| App | `BioBridge.app`, arm64, ad-hoc signed, 167 MB; `Info.plist` version 0.1.0 |
+
+**Checks on this build:**
+- The bundled `biobridge` code is identical to the commit (`diff -rq`).
+- Mounted read-only, the disk image contains this build: the same build info, `Info.plist` 0.1.0, and a signature that verifies.
+- Every disk image built later gets a different checksum, because the build time is recorded inside it. The checksum above identifies this candidate.
 
 **Bundle check.** `scripts/check_app_bundle.py` runs on every build. It fails unless:
 - the signature verifies (`codesign --verify --deep --strict`);
@@ -20,7 +30,7 @@ The candidate is built with `scripts/build_app.sh` from the M3 commit, with no u
 - the recorded source digest matches the bundled code;
 - the `Info.plist` version equals `biobridge.__version__`.
 
-**Builds before the commit.** They recorded `2f997da…+uncommitted changes`, with source sha256 `65050cbda1fcfffc258cdfa122879d8fde57aca0cf5bcd7b96fe7797ee5fefa8`. The checks below ran on such a build. The bundled code was the same as in the M3 commit, so the source digest is the same.
+**Builds before the commit.** They recorded `2f997da…+uncommitted changes` and the same source sha256, because their bundled code was the same as the commit's. The manual retest ran on such a build.
 
 ## Automated tests
 
@@ -45,18 +55,21 @@ The browser layout tests cover:
 
 ## Packaged app, driven end to end
 
-`scripts/verify_packaged_app.py` launches the built app with an isolated data directory and drives the interface in Chromium. On the pre-commit build of the same source, it passed.
+`scripts/verify_packaged_app.py` launches the built app with an isolated data directory and drives the interface in Chromium. On the candidate build, it passed.
 
 | Check | Result |
 |---|---|
-| First setup, from a fresh engine install until the interface was ready | 56.3 s |
-| Pasted `chr17-43057051-C-T` → results → CSV | 18.7 s, including the chr17 download |
-| Upload of `runner_vs_cli_grch38.vcf` (16 records, chr17 and chr22) → results → CSV | 27.6 s, including the chr22 download |
+| First setup, from a fresh engine install until the interface was ready | 67.0 s (engine install 65.3 s, mostly downloading) |
+| Pasted `chr17-43057051-C-T` → results → CSV | 38.2 s, including the chr17 download; the engine itself took 6.7 s |
+| Upload of `runner_vs_cli_grch38.vcf` (16 records, chr17 and chr22) → results → CSV | 31.1 s, including the chr22 download; the engine took 22.3 s |
 | Progress, then Cancel (50 alleles) | "Scored 1 of 50…" was seen; Cancel left a job with no results |
 | Quit from the page | 9 child processes started; none running at Quit, no survivors |
-| Requests | 109, all to 127.0.0.1. The only assets were `/static/app.css` and `/static/app.js`: no CDN, no failed requests, no page errors |
+| Requests | 142, all to 127.0.0.1. The only assets were `/static/app.css` and `/static/app.js`: no CDN, no failed requests, no page errors |
 | Window responsiveness | no event-loop delay over 100 ms |
 | **Packaged results vs the SpliceAI runner** | both jobs were re-scored from their saved inputs with the development runner and were **identical**: upstream strings, statuses, reasons, details, warnings and CSV score columns |
+| **Provenance in the CSVs** | `biobridge_commit` = `def7e9fe9bc698a1c7fac0cb282a0b35af557660`, with no `+uncommitted changes`; `biobridge_source_sha256` = `65050cbd…` |
+
+The previous run, on a pre-commit build of the same source, gave the same results. It was faster where downloads were involved: setup 56.3 s, the pasted job 18.7 s and the upload 27.6 s.
 
 **Earlier runs of the same checks** gave the same results with minor differences:
 - The 0.5 s delay during engine install. Two earlier runs each logged one window delay of about 0.5 s while the engine was installing.
