@@ -75,3 +75,19 @@ def test_the_check_does_not_write_into_the_bundle(tmp_path):
     before = sorted(p.relative_to(app) for p in app.rglob("*"))
     subprocess.run([sys.executable, REPO / "scripts" / "check_app_bundle.py", app], capture_output=True)
     assert sorted(p.relative_to(app) for p in app.rglob("*")) == before
+
+
+def test_bundle_identifier_is_real_and_matches_the_launcher():
+    expected = check_app_bundle.bundle_identifier(REPO / "pyproject.toml")
+    assert expected == "io.github.rinatrizvanov.biobridge"
+    assert not expected.startswith(check_app_bundle.PLACEHOLDER_PREFIXES)
+    launcher = (REPO / "src" / "biobridge" / "launcher.py").read_text()
+    assert f'APP_ID = "{expected}"' in launcher
+
+
+def test_required_license_texts_exist_in_the_source():
+    prefix = "Contents/Resources/app/"
+    shipped = [rel for rel in check_app_bundle.REQUIRED if "/third_party_licenses/" in rel]
+    assert len(shipped) == 8
+    for rel in shipped:
+        assert (REPO / "src" / rel.removeprefix(prefix)).is_file(), rel

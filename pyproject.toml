@@ -36,14 +36,15 @@ addopts = "-m 'not model and not browser'"
 
 [tool.briefcase]
 project_name = "BioBridge"
-# Placeholder reverse-DNS prefix for unreleased builds; choose a real one before any release.
-bundle = "local.biobridge"
+# Reverse-DNS prefix from the maintainer's GitHub account (rinatrizvanov.github.io): the app's
+# identifier is io.github.rinatrizvanov.biobridge. Keep it in step with APP_ID in launcher.py.
+bundle = "io.github.rinatrizvanov"
 version = "0.1.0"
 
 [tool.briefcase.app.biobridge]
 formal_name = "BioBridge"
-description = "Run SpliceAI locally on your Mac (experimental feasibility build)."
-long_description = "Experimental feasibility build. Sets up the SpliceAI engine and shows one real prediction."
+description = "Run SpliceAI locally on your Mac (experimental research software)."
+long_description = "Sets up the SpliceAI engine on this Mac and scores GRCh38 variants in a local browser interface. Experimental research software, not a diagnostic."
 sources = ["src/biobridge"]
 requires = ["uv==0.11.8", "truststore==0.10.4", "starlette==1.7.0", "uvicorn==0.54.0", "jinja2==3.1.6", "python-multipart==0.0.32"]
 # Console-script wrappers from dependencies are unused and embed the build machine's
@@ -57,4 +58,7 @@ cleanup_paths = [
 
 [tool.briefcase.app.biobridge.macOS]
 requires = ["toga-cocoa==0.5.7"]
+# The documented minimum (unverified; see the README's platform table). Without it the
+# app would declare the support package's minimum, macOS 11.
+min_os_version = "14.0"
 universal_build = false

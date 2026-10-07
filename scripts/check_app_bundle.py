@@ -2,8 +2,9 @@
 """Check a built BioBridge.app before it is shared.
 
 Fails if the signature does not verify, if required files are missing, if the
-Info.plist version differs from biobridge.__version__, or if the bundle embeds a
-local path from this build:
+Info.plist version differs from biobridge.__version__, if the bundle identifier is
+not the one in pyproject.toml or is a placeholder, or if the bundle embeds a local
+path from this build:
 
 - the path of the source checkout the app was built from, anywhere in the bundle
   (console-script shebangs once pointed into the build tree);
@@ -16,11 +17,12 @@ GitHub's macOS runners is also the builder's home, so the home-directory check d
 not apply to them. A bare username is not searched for: "runner", for example, is
 also ordinary text in BioBridge's own code (runner.py).
 
-    python3 scripts/check_app_bundle.py build/biobridge/macos/app/BioBridge.app
+    uv run python scripts/check_app_bundle.py build/biobridge/macos/app/BioBridge.app
 """
 
 import json
 import plistlib
+import tomllib
 import subprocess
 import sys
 from pathlib import Path
@@ -29,10 +31,24 @@ REQUIRED = [
     "Contents/Resources/app_packages/bin/uv",
     "Contents/Resources/app/biobridge/adapters/spliceai/engine.lock",
     "Contents/Resources/app/biobridge/adapters/spliceai/runner.py",
+    # License texts for components of the Python runtime and the Briefcase stub.
+    *(f"Contents/Resources/app/biobridge/third_party_licenses/{name}" for name in (
+        "README.txt", "python-3.11.9-license.rst", "tcl-8.6.13-license.terms", "tk-8.6.13-license.terms",
+        "ncurses-5.9-license.txt", "xz-5.2.3-COPYING", "briefcase-macOS-Xcode-template-LICENSE",
+        "briefcase-macOS-App-template-LICENSE")),
 ]
 REPO = Path(__file__).resolve().parent.parent
+# Reverse-DNS prefixes that no released build may use.
+PLACEHOLDER_PREFIXES = ("local.", "com.example.", "org.example.", "org.beeware.")
 # Written at install time rather than copied from a wheel.
 INSTALL_METADATA = {"direct_url.json", "INSTALLER", "REQUESTED", "RECORD"}
+
+
+def bundle_identifier(pyproject: Path) -> str:
+    """The identifier Briefcase gives the app: bundle prefix + "." + app name."""
+    briefcase = tomllib.loads(pyproject.read_text())["tool"]["briefcase"]
+    (app_name,) = briefcase["app"]
+    return f"{briefcase['bundle']}.{app_name}"
 
 
 def own_file(rel: Path, data: bytes) -> bool:
@@ -72,6 +88,14 @@ def main(app: Path) -> int:
     from biobridge.buildinfo import BUILD_INFO_NAME, source_digest
     with open(app / "Contents/Info.plist", "rb") as f:
         plist = plistlib.load(f)
+    expected_id = bundle_identifier(REPO / "pyproject.toml")
+    if plist.get("CFBundleIdentifier") != expected_id:
+        problems.append(f"bundle identifier {plist.get('CFBundleIdentifier')} differs from {expected_id}")
+    min_os = tomllib.loads((REPO / "pyproject.toml").read_text())["tool"]["briefcase"]["app"]["biobridge"]["macOS"]["min_os_version"]
+    if plist.get("LSMinimumSystemVersion") != min_os:
+        problems.append(f"minimum macOS {plist.get('LSMinimumSystemVersion')} differs from {min_os}")
+    if expected_id.startswith(PLACEHOLDER_PREFIXES):
+        problems.append(f"bundle identifier {expected_id} is a placeholder")
     if plist.get("CFBundleShortVersionString") != __version__:
         problems.append(f"Info.plist version {plist.get('CFBundleShortVersionString')} "
                         f"differs from biobridge {__version__}")

@@ -291,5 +291,9 @@ class BioBridge(toga.App):
         return True
 
 
+# Must equal the Briefcase bundle identifier (pyproject.toml: bundle + "." + app name).
+APP_ID = "io.github.rinatrizvanov.biobridge"
+
+
 def main() -> BioBridge:
-    return BioBridge("BioBridge", "local.biobridge.biobridge")
+    return BioBridge("BioBridge", APP_ID)
