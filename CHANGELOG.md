@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — 2026-10-09
+## 0.1.0 — 2026-10-10
 
 **Source release.** No macOS disk image is published for 0.1.0. The candidate image is waiting for an installation test on a second Mac; see `docs/release-v0.1.0.md`.
 

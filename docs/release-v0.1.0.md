@@ -1,6 +1,6 @@
 # BioBridge 0.1.0: release record and pending checks
 
-**Source release v0.1.0, 2026-10-09** (git tag `v0.1.0`, Apache-2.0).
+**Source release v0.1.0, 2026-10-10** (git tag `v0.1.0`, Apache-2.0).
 
 **No disk image is published.** The candidate disk image described below is held back until the installation checks in the next section are done.
 
@@ -150,11 +150,11 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
 
 ## Release record
 
-### Source release (2026-10-09): done
+### Source release (2026-10-10): done
 
 1. **The personal email address is gone from the history.** Commits now use the maintainer's GitHub noreply address. The old private repository, whose history and CI records contained the address, was deleted on 2026-10-09. The replacement repository was created the same day with the cleaned history, and its CI passed ([ci.md](ci.md#results)). The complete history was scanned again before release. Recommended for the maintainer: GitHub's "Keep my email addresses private" and "Block command line pushes that expose my email" settings.
 2. **CI is green on the code.** The replacement repository's first push (head `987c04d`, packaged code identical to `ef23195`) passed every job. The release commit's own CI run is listed in [ci.md](ci.md#results) once recorded.
-3. **Release date and tag.** `date-released: 2026-10-09` is set in `CITATION.cff`, along with the date in `CHANGELOG.md`, and the source is tagged `v0.1.0` on the release commit.
+3. **Release date and tag.** `date-released: 2026-10-10` is set in `CITATION.cff`, along with the date in `CHANGELOG.md`, and the source is tagged `v0.1.0` on the release commit.
 
 ### Before a disk image is published
 

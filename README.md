@@ -2,7 +2,7 @@
 
 BioBridge runs [SpliceAI](https://github.com/Illumina/SpliceAI) on your own Mac through a simple browser interface. You don't need a terminal, an account or a server, and your variants never leave the computer.
 
-> **Version 0.1.0: source release, 2026-10-09.** **No ready-to-install disk image is published yet.** It is waiting for an installation test on a second Mac (see [Pending checks](#pending-checks)). Experimental research software, not a diagnostic. SpliceAI's trained models are licensed for **academic and non-commercial use only** (CC BY-NC 4.0); commercial use, including research at companies, requires a license from Illumina.
+> **Version 0.1.0: source release, 2026-10-10.** **No ready-to-install disk image is published yet.** It is waiting for an installation test on a second Mac (see [Pending checks](#pending-checks)). Experimental research software, not a diagnostic. SpliceAI's trained models are licensed for **academic and non-commercial use only** (CC BY-NC 4.0); commercial use, including research at companies, requires a license from Illumina.
 
 ## What it does
 
