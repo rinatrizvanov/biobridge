@@ -40,7 +40,9 @@ First usable version. Experimental research software, not a diagnostic; SpliceAI
 - **Bundle check:** it now fails on a placeholder identifier, a mismatched minimum macOS, or missing license texts.
 - **Docs:** the README and install guide separate tested platforms from unverified ones.
 - **App runtime:** now Python 3.13.16 with OpenSSL 3.5.9 (BeeWare `3.13-b16`, pinned by revision and checksum), replacing Python 3.11.9 with OpenSSL 3.0.13. The SpliceAI engine stays in its own Python 3.11 environment. Earlier docs wrongly said the 3.11 runtime "gets no security fixes": Python 3.11 still receives source-only security releases until October 2027, but the bundled 3.11.9 build could not receive them.
-- **Candidate:** a new disk image built from `3a6f738` replaces the `def7e9f` test candidate, which is kept only as historical evidence.
+- **Candidate:** a new disk image, built from `ef23195` with the Python 3.13.16 runtime, replaces the `def7e9f` test candidate. The old candidate is kept only as historical evidence.
+- **Reproducible app builds:** the app's dependencies, including indirect ones, are installed at the versions in `uv.lock`, and the bundle check fails on any difference. Before this, a rebuild picked up a newer platformdirs from PyPI.
+- **History rewritten** (2026-10-09) to remove a personal email address. Commits now use the maintainer's GitHub noreply address, and every commit ID changed. Commit IDs quoted in documents and messages were updated to the new ones.
 
 ### Known limitations and pending checks
 See `docs/limitations.md` and `docs/release-v0.1.0.md`. Pending:
@@ -49,4 +51,3 @@ See `docs/limitations.md` and `docs/release-v0.1.0.md`. Pending:
 - IT-managed Macs;
 - independent expert review of the explanations;
 - ClinVar-based demo inputs;
-- a manual retest of the `3a6f738` candidate disk image (see `docs/release-v0.1.0.md`).

@@ -95,7 +95,15 @@ It no longer searches for a bare username. The candidate bundle passes the new r
 
 ## Results
 
-**Run 37664065962**, for the push of `3a6f738` on 2026-10-07, the candidate's packaged source commit: **every job passed.** Every step succeeded, and the run uploaded no artifacts.
+### The replacement private repository
+
+*Pending: the replacement repository has not been created yet. CI on `ef23195` and later commits will be recorded here.*
+
+### The earlier copy of the private repository
+
+That copy was deleted on 2026-10-09, so that no copy of the old history, which contained a personal email address, or of its CI records stays on GitHub. The runs below are no longer viewable. They ran on the same commits before their IDs changed; the IDs given here are the current ones.
+
+**Run for `3a6f738`** (2026-10-07), the candidate's packaged source: **every job passed.** Every step succeeded, and the run uploaded no artifacts.
 
 | Job | Operating system | Result | Duration |
 |---|---|---|---|
@@ -117,7 +125,7 @@ It no longer searches for a bare username. The candidate bundle passes the new r
   - no process survived Quit;
   - both jobs were identical to the runner.
 
-**Earlier run 37657592890**, for the push of `55316c0` on 2026-10-07: **every job passed.** Every step succeeded, and the run uploaded no artifacts.
+**Run for `55316c0`** (2026-10-07): **every job passed.** Every step succeeded, and the run uploaded no artifacts.
 
 | Job | Operating system | Result | Duration |
 |---|---|---|---|
@@ -137,7 +145,7 @@ It no longer searches for a bare username. The candidate bundle passes the new r
   - no process survived Quit;
   - both jobs were identical to the runner.
 
-**Earlier run 37650799748**, for the push of `b110133` on 2026-10-07: **every job passed on the first run.** The repository is private: https://github.com/rinatrizvanov/biobridge/actions/runs/37650799748
+**Run for `b110133`** (2026-10-07), the first run: **every job passed.**
 
 | Job | Image (operating system) | Result | Duration |
 |---|---|---|---|

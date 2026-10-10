@@ -66,7 +66,7 @@ Details are in [docs/release-v0.1.0.md](docs/release-v0.1.0.md).
 - Unit, real-engine and real-browser (Chromium and WebKit) tests.
 - An automated run of the packaged app, in which its results were identical to the SpliceAI runner.
 - A manual checklist run. Its two findings, a clipped chart label and an unknown source revision in the CSV, are fixed,
-  and a manual retest passed.
+  and a manual retest of the current packaged source passed.
 
 **Passed on GitHub's runners** (private repository): lint, the test suites on macOS 15 and 26, and the packaged app on macOS 15
 ([docs/ci.md](docs/ci.md)).
@@ -77,7 +77,6 @@ Details are in [docs/release-v0.1.0.md](docs/release-v0.1.0.md).
 - IT-managed Macs.
 - Independent expert review of the explanations.
 - Demo inputs based on public ClinVar records.
-- A manual retest of the current candidate disk image, built from `3a6f738` with the app runtime Python 3.13.16 ([release page](docs/release-v0.1.0.md#release-blockers)).
 
 ## Development
 

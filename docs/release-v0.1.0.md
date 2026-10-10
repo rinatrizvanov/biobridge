@@ -4,16 +4,20 @@
 
 ## The candidate build
 
-**Candidate: built on 2026-10-07 from packaged source commit `3a6f738`.** It was built with `scripts/build_app.sh`, with no uncommitted changes in the packaged paths (`src/`, `pyproject.toml` and `uv.lock`). This is the disk image for the second-Mac test and for any later distribution.
+**Commit IDs in this repository.** Its history was rewritten on 2026-10-09 to remove a personal email address, so every commit ID changed. All IDs in this document refer to the current history. Disk images built before that date record the earlier IDs of the same commits. The mapping between the two is kept privately by the maintainer.
+
+**Candidate: built on 2026-10-09 from commit `ef23195`.** It was built with `scripts/build_app.sh`, with no uncommitted changes. The app's dependencies are installed at the versions in `uv.lock`. This is the disk image for the second-Mac test and for any later distribution.
 
 | Item | Value |
 |---|---|
-| Packaged source commit, recorded in the app and in every CSV (`biobridge_commit`) | `3a6f738bf74a7551327f7cc007c86339dcabf110` (no uncommitted changes) |
+| Commit recorded in the app and in every CSV (`biobridge_commit`) | `ef23195c912f80253f0f1ac9f78680737d64eec2` (no uncommitted changes) |
 | Source sha256, recorded in the app | `1f90830a31c88fb541f126be430280839dde5e1af4adde2b6cc3dc1c2ed68a40` |
-| Disk image `dist/BioBridge-0.1.0.dmg` | 49,220,279 bytes, sha256 `7fc22fedd200bda9347e829bc4e15230298c950d6961de0516d945d50f488b3d` |
+| Disk image `dist/BioBridge-0.1.0.dmg` | 49,220,411 bytes, sha256 `3dadda61f89c1aeacac62e4ed759c1f39106b2ac62f39966b705cfa1882e2d3b` |
 | App | `BioBridge.app`, arm64, ad-hoc signed, 164 MB; version 0.1.0; identifier `io.github.rinatrizvanov.biobridge`; minimum macOS 14.0 |
 | App runtime | Python 3.13.16 with OpenSSL 3.5.9 (BeeWare `3.13-b16`), read from the built app ([0007](decisions/0007-app-runtime-python-3.13.md)) |
 | SpliceAI engine | installed at setup in a separate Python 3.11 environment |
+
+**The packaged code is that of `3a6f738`.** `ef23195` changed only the build and check scripts, which are not in the app. The packaged paths (`src/`, `pyproject.toml`, `uv.lock`, `.python-version`) are identical, and so is the source sha256.
 
 **Checks on this build:**
 - **The bundle check** passes. It covers:
@@ -22,32 +26,40 @@
   - no embedded local paths;
   - the source digest;
   - the version, identifier and minimum macOS against `pyproject.toml`;
-  - the Python license text matching the bundled runtime.
-- **The bundled `biobridge` code** is identical to the commit (`diff -rq`).
-- **The disk image itself.** Mounted read-only, it contains this build:
-  - commit `3a6f738`, with no uncommitted changes;
-  - identifier `io.github.rinatrizvanov.biobridge` and minimum macOS 14.0;
-  - runtime 3.13.16;
-  - the six license files;
-  - a signature that verifies.
+  - the Python license text matching the bundled runtime;
+  - every bundled package's version matching `uv.lock`.
+- **The disk image itself.** Mounted read-only, it contains this build: commit `ef23195` with no uncommitted changes, the identifier, minimum macOS 14.0, and a signature that verifies.
 - **The checksum** identifies this candidate. Every later build gets a different one, because the build time is recorded inside the disk image.
-- **CI.** CI built the same packaged source from `3a6f738`, with source sha256 `1f90830a…`, and passed every job ([ci.md](ci.md#results)).
+- **CI** on this commit: see [ci.md](ci.md#results).
 
-**Commits after `3a6f738` are documentation only.** They are not in the app and never appear in its provenance. `git diff --stat 3a6f738 HEAD -- src pyproject.toml uv.lock .python-version` prints nothing while that holds.
+**Equivalent to the disk image the developer retested by hand.** That image was built on 2026-10-07 from the same packaged source, before the history was rewritten. Comparison:
+- **Files:** 3,469 of the 3,475 files are byte-identical. The other six differ only where a rebuild must:
+  - the build-info file: the commit ID and build time; the source sha256 is identical;
+  - the code-signature files and the launcher binary's embedded signature. The launcher binaries are identical once their signatures are removed;
+  - three install records (`RECORD`), in the hashes of console scripts the build generates and then removes, which depend on the build folder's path.
+- **Results:** the packaged-app run gives CSVs identical to the retested image's run in every score, status and position column, and both jobs are identical to the SpliceAI runner.
+- **Why a first rebuild differed.** Briefcase installed indirect dependencies at whatever versions PyPI had at build time. A rebuild picked up platformdirs 4.12.4 instead of the 4.12.3 in `uv.lock`. Builds now use the `uv.lock` versions, and the bundle check fails on any difference.
 
-**Superseded candidate, kept only as historical evidence:**
-- **The disk image:** built from `def7e9f` (M3) on 2026-10-07; source sha256 `65050cbd…`; 51,135,779 bytes; sha256 `bdbc41a934ab36fd7f769c1f6a8c96e3c6b5f11ed0054c6f941e0f2b9b974f90`.
-- **Where it is kept:** read-only on the developer's Mac as `dist/historical/BioBridge-0.1.0-def7e9f-superseded-test-candidate.dmg`. It is not in the repository.
-- **Not for testing or distribution.** It has the placeholder identifier `local.biobridge.biobridge`, a declared minimum of macOS 11, no runtime license texts, and the frozen Python 3.11.9 runtime with OpenSSL 3.0.13. The current bundle check rejects it.
-- **What it was used for:** the manual checklist and the retest earlier on 2026-10-07 ran on it, or on pre-commit builds of the same source.
+**Commits after `ef23195` are documentation only.** They are not in the app and never appear in its provenance. `git diff --stat ef23195 HEAD -- src pyproject.toml uv.lock .python-version scripts` prints nothing while that holds.
+
+**Earlier disk images, kept read-only on the developer's Mac as historical evidence only.** They are not in the repository and are not for testing or distribution.
+- **`dist/historical/BioBridge-0.1.0-3a6f738-retested-before-history-rewrite.dmg`** (49,220,279 bytes, sha256 `7fc22fed…8b3d`):
+  - the image the developer retested by hand;
+  - the same packaged source as `3a6f738`;
+  - it records that commit's pre-rewrite ID.
+- **`dist/historical/BioBridge-0.1.0-def7e9f-superseded-test-candidate.dmg`** (51,135,779 bytes, sha256 `bdbc41a934ab36fd7f769c1f6a8c96e3c6b5f11ed0054c6f941e0f2b9b974f90`):
+  - built from the M3 source (`def7e9f`, source sha256 `65050cbd…`);
+  - it has the placeholder identifier, a declared minimum of macOS 11, no runtime license texts, and the frozen Python 3.11.9 runtime;
+  - the current bundle check rejects it;
+  - the manual checklist and the first retest ran on it, or on pre-commit builds of the same source.
 
 ## Automated tests
 
-All tests ran against the candidate's source (`3a6f738`). They ran on the developer's Mac and in CI on macOS 15.7.9 and 26.6.2. The test environment uses Python 3.13, the app's runtime; the engine tests use the Python 3.11 engine environment.
+All tests ran against the candidate's packaged source, which `3a6f738` and `ef23195` share. They ran on the developer's Mac, and in CI on macOS 15.7.9 and 26.6.2, in the private repository's earlier copy. CI on the recreated repository is recorded in [ci.md](ci.md#results). The test environment uses Python 3.13, the app's runtime; the engine tests use the Python 3.11 engine environment.
 
 | Suite | Result |
 |---|---|
-| Unit and HTTP (`uv run pytest`) | 151 passed |
+| Unit and HTTP (`uv run pytest`) | 152 passed at `ef23195` (151 before its bundle-check test) |
 | Real browsers, Chromium and WebKit (`-m "browser and not model"`) | 30 passed |
 | Real engine (`-m model`) | 28 passed: upstream README examples, runner vs upstream CLI in both masking modes, validation, chromosome ends, masking labels, job pipeline, and one real-engine run per browser |
 | Lint (ruff 0.16.10, rules in `ruff.toml`: E4, E7, E9, F) | clean |
@@ -64,21 +76,22 @@ The browser layout tests cover:
 
 ## Packaged app, driven end to end
 
-`scripts/verify_packaged_app.py` launches the built app with an isolated data directory and drives the interface in Chromium. On the candidate (`3a6f738`, developer's Mac), it passed. The CI packaged-app job passed as well, on its own build of the same source.
+`scripts/verify_packaged_app.py` launches the built app with an isolated data directory and drives the interface in Chromium. On the candidate (`ef23195`, developer's Mac), it passed.
 
 | Check | Result |
 |---|---|
-| First setup, from a fresh engine install until the interface was ready | 46.2 s |
-| Pasted `chr17-43057051-C-T` → results → CSV | 24.8 s, including the chr17 download |
+| First setup, from a fresh engine install until the interface was ready | 48.8 s |
+| Pasted `chr17-43057051-C-T` → results → CSV | 26.3 s, including the chr17 download |
 | Upload of `runner_vs_cli_grch38.vcf` (16 records, chr17 and chr22) → results → CSV | 29.7 s, including the chr22 download |
 | Progress, then Cancel (50 alleles) | "Scored 1 of 50…" was seen; Cancel left a job with no results |
 | Quit from the page | 9 child processes started; none running at Quit, no survivors |
 | Requests | 121, all to 127.0.0.1. The only assets were `/static/app.css` and `/static/app.js`: no CDN, no failed requests, no page errors |
 | Window responsiveness | no event-loop delay over 100 ms |
 | **Packaged results vs the SpliceAI runner** | both jobs were re-scored from their saved inputs with the development runner and were **identical**: upstream strings, statuses, reasons, details, warnings and CSV score columns |
-| **Provenance in the CSVs** | `biobridge_commit` = `3a6f738bf74a7551327f7cc007c86339dcabf110`, with no `+uncommitted changes`; `biobridge_source_sha256` = `1f90830a…` |
+| **Provenance in the CSVs** | `biobridge_commit` = `ef23195c912f80253f0f1ac9f78680737d64eec2`, with no `+uncommitted changes`; `biobridge_source_sha256` = `1f90830a…` |
+| **Results vs the retested image's run** | identical CSVs in every score, status and position column |
 
-The superseded `def7e9f` candidate, with its Python 3.11.9 runtime, passed the same checks earlier on 2026-10-07.
+The retested image (same packaged source) and the superseded `def7e9f` image passed the same checks earlier on 2026-10-07.
 
 **Earlier runs of the same checks** gave the same results with minor differences:
 - The 0.5 s delay during engine install. Two earlier runs each logged one window delay of about 0.5 s while the engine was installing.
@@ -106,15 +119,15 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
   - two jobs: a pasted variant and the 16-record VCF;
   - both identical to the SpliceAI runner, including the CSV score columns (`verify_packaged_app.py --compare-jobs`);
   - Quit cleanup: 4 child processes started, none running at Quit, no survivors.
-- **The current candidate (`3a6f738`) has had no manual run yet**; see [Release blockers](#release-blockers).
+- **Manual retest of the current packaged source** (2026-10-08): **passed**, on the image built on 2026-10-07 from the same packaged source, before the history rewrite. The current candidate is equivalent to it, file by file and in results (see [The candidate build](#the-candidate-build)), so that retest carries over.
 - **Jobs from the first manual run** were scored identically by the runner as well. Their CSVs were written by the earlier code, which still named an event (`AG`) for all-zero rows. The comparison now checks CSVs only for jobs made from the current source.
 
 ## Release blockers
 
 ### Before the source repository is made public
 
-1. **Your decision: the email address in the history.** All commits carry the author address `[personal address removed]`, so making the repository public publishes it. Changing it means rewriting the history, which changes every commit SHA, including `3a6f738`, the commit the candidate app records.
-2. **A green CI run on the last code commit before publishing.** `3a6f738` is green ([ci.md](ci.md#results)). Documentation-only commits after it skip CI.
+1. **Done: the personal email address is gone from the history** (2026-10-09). Commits now use the maintainer's GitHub noreply address. The old private repository, whose history and CI records contained the address, was deleted on 2026-10-09. A replacement private repository with the cleaned history is **pending**, and is recorded in [ci.md](ci.md#results) once created. Recommended for the maintainer: GitHub's "Keep my email addresses private" and "Block command line pushes that expose my email" settings.
+2. **A green CI run on the last code commit before publishing**, in the replacement repository: see [ci.md](ci.md#results). Documentation-only commits after it skip CI.
 3. **At release time:**
    - set `date-released` in `CITATION.cff` and the date in `CHANGELOG.md`;
    - tag `v0.1.0`;
@@ -124,14 +137,14 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
 
 ### Before the next disk image is distributed
 
-1. **The second-Mac test** with the candidate disk image from `3a6f738`, sha256 `7fc22fed…` ([second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md)). It answers three questions:
+1. **The second-Mac test** with the candidate disk image from `ef23195`, sha256 `3dadda61…` ([second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md)). It answers three questions:
    - Does a browser-downloaded copy set up and run on a Mac other than the developer's, without developer tools?
    - Does it need a second Open Anyway, for the app after the disk image's?
    - Does provenance show the clean commit?
 
    When packaging, Briefcase warns that an ad-hoc-signed app "will run on this computer, but will not run on anyone else's computer". This test is what checks that warning.
-2. **A short manual retest of the candidate on the developer's Mac:** steps 1, 7 and 8 of the [retest checklist](retest-checklist-v0.1.md). The automated checks have passed; no person has used this build yet.
-3. **Done: a new candidate built from a clean commit.** It is built from `3a6f738` with the final identifier, minimum macOS, license texts and runtime. The bundle check, the disk-image inspection, the packaged-app run and CI all passed (see [The candidate build](#the-candidate-build)).
+2. **Done: a manual retest of the packaged source** (2026-10-08). It carries over to the current candidate by equivalence (see [The candidate build](#the-candidate-build)).
+3. **Done: a candidate built from a clean commit** (`ef23195`) with the final identifier, minimum macOS, license texts, runtime and `uv.lock` dependency versions. The bundle check, the disk-image inspection and the packaged-app run passed. CI in the replacement repository will be recorded in [ci.md](ci.md#results).
 4. **Done: the bundled Python runtime is updated.** The app's own runtime is now Python 3.13.16 with OpenSSL 3.5.9, verified from the binaries. The SpliceAI engine stays on Python 3.11. See [0007](decisions/0007-app-runtime-python-3.13.md).
 
    **Correction.** An earlier version of this page said the bundled 3.11 runtime "gets no security fixes" because Python 3.11 had no newer macOS binaries. That was too broad:
