@@ -101,3 +101,16 @@ def test_runtime_versions_and_matching_python_license(tmp_path):
     })
     assert check_app_bundle.runtime_versions(app) == ("3.13.16", "3.5.9")
     assert (REPO / "src/biobridge/third_party_licenses/python-3.13.16-license.rst").is_file()
+
+
+def test_bundled_versions_must_match_uv_lock(tmp_path):
+    lock = tmp_path / "uv.lock"
+    lock.write_text('[[package]]\nname = "platformdirs"\nversion = "4.12.3"\n\n'
+                    '[[package]]\nname = "typing-extensions"\nversion = "4.16.0"\n')
+    meta = "Contents/Resources/app_packages/{}.dist-info/METADATA"
+    app = bundle(tmp_path, {
+        meta.format("platformdirs-4.12.4"): b"Name: platformdirs\nVersion: 4.12.4\n",
+        meta.format("typing_extensions-4.16.0"): b"Name: typing_extensions\nVersion: 4.16.0\n",
+    })
+    assert check_app_bundle.version_drift(app, lock) == [
+        "bundled platformdirs 4.12.4 is not the version in uv.lock (4.12.3)"]

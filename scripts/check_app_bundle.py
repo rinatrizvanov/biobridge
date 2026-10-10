@@ -2,7 +2,8 @@
 """Check a built BioBridge.app before it is shared.
 
 Fails if the signature does not verify, if required files are missing, if the
-Info.plist version differs from biobridge.__version__, if the bundle identifier is
+Info.plist version differs from biobridge.__version__, if a bundled package's
+version differs from uv.lock, if the bundle identifier is
 not the one in pyproject.toml or is a placeholder, or if the bundle embeds a local
 path from this build:
 
@@ -62,6 +63,23 @@ def runtime_versions(app: Path) -> tuple[str | None, str | None]:
         found = re.search(rb"OpenSSL (\d+\.\d+\.\d+)", lib.read_bytes())
         openssl = found.group(1).decode() if found else openssl
     return python, openssl
+
+
+def version_drift(app: Path, lock: Path) -> list[str]:
+    """Bundled Python packages whose version is not the one pinned in uv.lock."""
+    canon = lambda name: re.sub(r"[-_.]+", "-", name).lower()  # noqa: E731
+    locked: dict[str, set[str]] = {}
+    for package in tomllib.loads(lock.read_text())["package"]:
+        locked.setdefault(canon(package["name"]), set()).add(package["version"])
+    found = []
+    for metadata in sorted(app.glob("Contents/Resources/app_packages/*.dist-info/METADATA")):
+        fields = dict(line.split(": ", 1) for line in metadata.read_text(errors="replace").splitlines()
+                      if line.startswith(("Name: ", "Version: ")))
+        name, version = fields.get("Name", "?"), fields.get("Version", "?")
+        if version not in locked.get(canon(name), set()):
+            found.append(f"bundled {name} {version} is not the version in uv.lock "
+                         f"({', '.join(sorted(locked.get(canon(name), {'absent'})))})")
+    return found
 
 
 def own_file(rel: Path, data: bytes) -> bool:
@@ -125,6 +143,7 @@ def main(app: Path) -> int:
     print(f"runtime: Python {python}, OpenSSL {openssl}")
     if not (app / LICENSES / f"python-{python}-license.rst").exists():
         problems.append(f"no license text for the bundled Python runtime: {LICENSES}/python-{python}-license.rst")
+    problems += version_drift(app, REPO / "uv.lock")
     problems += local_paths(app, REPO, Path.home())
     for problem in problems:
         print("FAIL:", problem)

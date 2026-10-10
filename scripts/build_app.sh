@@ -6,6 +6,12 @@
 set -eu
 cd "$(dirname "$0")/.."
 uv run python scripts/write_build_info.py
+# Install the app's dependencies, including indirect ones, at the versions in uv.lock
+# (the versions the tests run with), not whatever PyPI has at build time: Briefcase
+# installs them with pip, which honours PIP_CONSTRAINT.
+constraints="$(mktemp -t biobridge-constraints)"
+uv export --frozen --no-dev --no-emit-project --no-hashes --format requirements-txt -o "$constraints" > /dev/null
+export PIP_CONSTRAINT="$constraints"
 find src -name __pycache__ -type d -prune -exec rm -rf {} +
 # Recreate the generated app template so Info.plist carries the current version
 # (briefcase update does not rewrite it). Only build/biobridge/macos/app is replaced;
