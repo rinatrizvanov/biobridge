@@ -97,7 +97,28 @@ It no longer searches for a bare username. The candidate bundle passes the new r
 
 ### The replacement private repository
 
-*Pending: the replacement repository has not been created yet. CI on `ef23195` and later commits will be recorded here.*
+The replacement repository was created on 2026-10-09, private, with the cleaned history.
+
+**Run 38011119744**, for the first push (head `987c04d`, a documentation commit on top of the candidate `ef23195`): **every job passed.** Every step succeeded, and the run uploaded no artifacts. The run's commit metadata carries only the noreply address.
+
+| Job | Operating system | Result | Duration |
+|---|---|---|---|
+| Lint | Ubuntu 24.04.5 | passed | 8 s |
+| Tests | macOS 15.7.9 (24G830) | unit and HTTP: 152 passed; browser: 30 passed; real engine: 28 passed | 8 min 7 s |
+| Tests | macOS 26.6.2 (25G83) | unit and HTTP: 152 passed; browser: 30 passed; real engine: 28 passed | 7 min 46 s |
+| Packaged app | macOS 15.7.9 | build and bundle check passed; packaged run passed | 3 min 22 s |
+
+**Packaged-app job:**
+- **The build:**
+  - commit `987c04d`, with no uncommitted changes;
+  - source sha256 `1f90830a…`, the candidate's packaged code;
+  - runtime Python 3.13.16 with OpenSSL 3.5.9;
+  - every bundled package at its `uv.lock` version.
+- **The packaged run:**
+  - first setup took 13.7 s, the pasted variant 10.8 s and the upload 36.4 s;
+  - all 109 requests stayed on 127.0.0.1, with no failed requests or page errors;
+  - no process survived Quit;
+  - both jobs were identical to the runner.
 
 ### The earlier copy of the private repository
 

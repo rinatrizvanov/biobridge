@@ -126,8 +126,8 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
 
 ### Before the source repository is made public
 
-1. **Done: the personal email address is gone from the history** (2026-10-09). Commits now use the maintainer's GitHub noreply address. The old private repository, whose history and CI records contained the address, was deleted on 2026-10-09. A replacement private repository with the cleaned history is **pending**, and is recorded in [ci.md](ci.md#results) once created. Recommended for the maintainer: GitHub's "Keep my email addresses private" and "Block command line pushes that expose my email" settings.
-2. **A green CI run on the last code commit before publishing**, in the replacement repository: see [ci.md](ci.md#results). Documentation-only commits after it skip CI.
+1. **Done: the personal email address is gone from the history** (2026-10-09). Commits now use the maintainer's GitHub noreply address. The old private repository, whose history and CI records contained the address, was deleted on 2026-10-09. The replacement private repository was created the same day with the cleaned history, and its CI passed ([ci.md](ci.md#results)). Recommended for the maintainer: GitHub's "Keep my email addresses private" and "Block command line pushes that expose my email" settings.
+2. **A green CI run on the last code commit before publishing.** In the replacement repository, the first push (head `987c04d`, packaged code identical to `ef23195`) passed every job ([ci.md](ci.md#results)). Documentation-only commits after it skip CI.
 3. **At release time:**
    - set `date-released` in `CITATION.cff` and the date in `CHANGELOG.md`;
    - tag `v0.1.0`;
@@ -144,7 +144,7 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
 
    When packaging, Briefcase warns that an ad-hoc-signed app "will run on this computer, but will not run on anyone else's computer". This test is what checks that warning.
 2. **Done: a manual retest of the packaged source** (2026-10-08). It carries over to the current candidate by equivalence (see [The candidate build](#the-candidate-build)).
-3. **Done: a candidate built from a clean commit** (`ef23195`) with the final identifier, minimum macOS, license texts, runtime and `uv.lock` dependency versions. The bundle check, the disk-image inspection and the packaged-app run passed. CI in the replacement repository will be recorded in [ci.md](ci.md#results).
+3. **Done: a candidate built from a clean commit** (`ef23195`) with the final identifier, minimum macOS, license texts, runtime and `uv.lock` dependency versions. The bundle check, the disk-image inspection and the packaged-app run passed. CI in the replacement repository passed every job ([ci.md](ci.md#results)).
 4. **Done: the bundled Python runtime is updated.** The app's own runtime is now Python 3.13.16 with OpenSSL 3.5.9, verified from the binaries. The SpliceAI engine stays on Python 3.11. See [0007](decisions/0007-app-runtime-python-3.13.md).
 
    **Correction.** An earlier version of this page said the bundled 3.11 runtime "gets no security fixes" because Python 3.11 had no newer macOS binaries. That was too broad:

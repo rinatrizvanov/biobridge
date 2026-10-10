@@ -1,6 +1,6 @@
 # 0008: Personal email removed from the history; reproducible app builds
 
-Status: **history rewritten locally; old repository deleted** (2026-10-09). Creating the replacement private repository with the cleaned history is **pending**. No tag, nothing published.
+Status: **done** (2026-10-09). The history is rewritten, the old repository deleted, and the replacement private repository created with the cleaned history; its first CI run passed. No tag, nothing published.
 
 ## Why
 
@@ -19,7 +19,7 @@ Every commit carried the maintainer's personal email address as author and commi
   - a negative control: the verifier flags a rewrite that leaves old IDs in documents;
   - two runs from the same input produced identical commit IDs.
 - **Before publishing:** the complete rewritten history was scanned for the address in every file of every commit, in messages and in author and committer fields.
-- **The repository is replaced rather than force-pushed.** The old private repository was deleted on 2026-10-09, and a new private one is to be created with the cleaned history. A force-push would leave the old commits reachable by ID in GitHub's cached views until GitHub Support removed them, and the old Actions runs would keep the address in their metadata.
+- **The repository is replaced rather than force-pushed.** The old private repository was deleted on 2026-10-09, and a new private one was created the same day with the cleaned history. A force-push would leave the old commits reachable by ID in GitHub's cached views until GitHub Support removed them, and the old Actions runs would keep the address in their metadata.
 
 ## Effect on provenance
 
