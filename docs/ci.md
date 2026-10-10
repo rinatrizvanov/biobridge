@@ -91,13 +91,13 @@ It no longer searches for a bare username. The candidate bundle passes the new r
 5. **Shell checks.** No shellcheck pass has been run on the workflow's shell lines or on the scripts.
 6. **Wider lint rules.** Ruff 0.16's broader default rules report 62 style findings; only E4, E7, E9 and F are enforced.
 
-**Cost.** In a private repository, GitHub charges macOS runner minutes at a higher rate than Linux minutes against the account's included minutes. A full run uses roughly three macOS jobs; see [Results](#results) for measured times.
+**Cost.** Standard GitHub-hosted runners are free for public repositories. In a private repository, macOS minutes count against the account's included minutes at a higher rate than Linux minutes. A full run uses roughly three macOS jobs.
 
 ## Results
 
-### The replacement private repository
+### The replacement repository
 
-The replacement repository was created on 2026-10-09, private, with the cleaned history.
+The replacement repository was created, private, on 2026-10-09 with the cleaned history.
 
 **Run 38011119744**, for the first push (head `987c04d`, a documentation commit on top of the candidate `ef23195`): **every job passed.** Every step succeeded, and the run uploaded no artifacts. The run's commit metadata carries only the noreply address.
 

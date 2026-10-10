@@ -2,7 +2,7 @@
 
 BioBridge runs [SpliceAI](https://github.com/Illumina/SpliceAI) on your own Mac through a simple browser interface. You don't need a terminal, an account or a server, and your variants never leave the computer.
 
-> **Version 0.1.0, release candidate; not yet released.** Experimental research software, not a diagnostic. SpliceAI's trained models are licensed for **academic and non-commercial use only** (CC BY-NC 4.0); commercial use, including research at companies, requires a license from Illumina.
+> **Version 0.1.0: source release, 2026-10-09.** **No ready-to-install disk image is published yet.** It is waiting for an installation test on a second Mac (see [Pending checks](#pending-checks)). Experimental research software, not a diagnostic. SpliceAI's trained models are licensed for **academic and non-commercial use only** (CC BY-NC 4.0); commercial use, including research at companies, requires a license from Illumina.
 
 ## What it does
 
@@ -35,7 +35,7 @@ Only one Mac, the developer's, has installed the app by hand. An install on a se
 
 ## Install and use
 
-1. **Install.** Follow [docs/install.md](docs/install.md). BioBridge is not notarized by Apple, so macOS asks you to approve it once.
+1. **Install.** Follow [docs/install.md](docs/install.md). BioBridge is not notarized by Apple, so macOS asks you to approve it once. Until a disk image is published, you can build one yourself on your own Mac (see [Development](#development)).
 2. **Set up.** Open BioBridge, confirm non-commercial use, and click **Start BioBridge**. The first setup takes about a minute.
 3. **Score.** Your browser opens BioBridge. Enter a variant such as `chr17-43045712-T-G`, or choose a VCF file. Confirm that the coordinates are GRCh38, then click **Run SpliceAI**.
 4. **Read the results.** [docs/interpreting-results.md](docs/interpreting-results.md) explains what the scores mean. Click **Download CSV** to keep them.
@@ -68,14 +68,23 @@ Details are in [docs/release-v0.1.0.md](docs/release-v0.1.0.md).
 - A manual checklist run. Its two findings, a clipped chart label and an unknown source revision in the CSV, are fixed,
   and a manual retest of the current packaged source passed.
 
-**Passed on GitHub's runners** (private repository): lint, the test suites on macOS 15 and 26, and the packaged app on macOS 15
+**Passed on GitHub's runners:** lint, the test suites on macOS 15 and 26, and the packaged app on macOS 15
 ([docs/ci.md](docs/ci.md)).
 
-**Still pending:**
-- An install on a second Mac ([checklist](docs/second-mac-checklist-v0.1.md)). This includes whether a downloaded copy needs a second approval.
-- macOS 14, the documented minimum, is unverified. The packaged app has not run on macOS 26.
-- IT-managed Macs.
-- Independent expert review of the explanations.
+### Pending checks
+
+None of these has been done. Until they are, treat the app as installed and used by hand on one Mac only.
+
+**Installation (blocks publishing a disk image):**
+- An install on a second Mac from a browser download ([checklist](docs/second-mac-checklist-v0.1.md)). It also shows whether macOS asks for a second approval for the app after the disk image's.
+- Macs managed by an institution (for example with Jamf or Santa), where Open Anyway may be unavailable.
+
+**Platforms:**
+- macOS 14, the documented minimum: unverified. Nothing has run on it.
+- macOS 26: the test suites pass in CI, but the packaged app has not been run on it.
+
+**Content:**
+- Independent expert review of the explanation wording.
 - Demo inputs based on public ClinVar records.
 
 ## Development

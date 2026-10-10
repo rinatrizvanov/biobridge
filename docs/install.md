@@ -1,5 +1,7 @@
 # Installing BioBridge
 
+> **No disk image has been published for BioBridge 0.1.0 yet.** It is waiting for an installation test on a second Mac ([release page](release-v0.1.0.md#pending-installation-and-platform-checks)). The steps below apply once one is published. A disk image you build yourself with `scripts/build_app.sh` (see the [README](../README.md#development)) opens on the Mac that built it without these approval steps.
+
 BioBridge is not notarized by Apple: notarization needs a paid Apple Developer account, and this is a free, volunteer project. macOS therefore asks you, once, to confirm that you want to open the downloaded disk image, and possibly the app. You never need the Terminal.
 
 You need a Mac with Apple Silicon and macOS 14 or later, an internet connection for the first setup (about 330 MB), and about 2 GB of free space. Only macOS 15 has been fully tested. macOS 26 is partly tested and macOS 14 is unverified; see the platform table in the [README](../README.md#requirements).

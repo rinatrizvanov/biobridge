@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.1.0 — release candidate (not released, not tagged)
+## 0.1.0 — 2026-10-09
+
+**Source release.** No macOS disk image is published for 0.1.0. The candidate image is waiting for an installation test on a second Mac; see `docs/release-v0.1.0.md`.
 
 First usable version. Experimental research software, not a diagnostic; SpliceAI's models are licensed for academic and non-commercial use only.
 

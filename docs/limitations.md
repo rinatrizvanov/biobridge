@@ -31,6 +31,7 @@
 - **First setup:** needs about 330 MB of downloads and about 2 GB of disk.
 - **Sleep:** BioBridge keeps the Mac awake while it sets up or scores, but closing the lid still puts the Mac to sleep and pauses the job. In one test a job paused this way finished normally after the Mac woke, with unchanged results.
 - **Clean-machine installation:** tested only on the developer's Mac. A clean install has not been verified.
+- **No published disk image for 0.1.0:** the source is released, but the macOS disk image is held back until it has been installed on a second Mac.
 
 ## Licensing
 

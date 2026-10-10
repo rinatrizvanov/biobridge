@@ -1,6 +1,32 @@
-# BioBridge 0.1.0: release readiness
+# BioBridge 0.1.0: release record and pending checks
 
-**Release candidate. Not released, not tagged and not published.** The source is in a private GitHub repository. Checks on the developer's Mac (Apple M4, macOS 15.6.1) used isolated data directories created with `mktemp -d`; none of them is a clean-machine test. CI results are in [ci.md](ci.md#results).
+**Source release v0.1.0, 2026-10-09** (git tag `v0.1.0`, Apache-2.0).
+
+**No disk image is published.** The candidate disk image described below is held back until the installation checks in the next section are done.
+
+Checks on the developer's Mac (Apple M4, macOS 15.6.1) used isolated data directories created with `mktemp -d`; none of them is a clean-machine test. CI results are in [ci.md](ci.md#results).
+
+## Pending installation and platform checks
+
+None of these has been done.
+
+**Installation. These block publishing a disk image.**
+1. **An install on a second Apple Silicon Mac**, from a browser download, with the candidate disk image (`ef23195`, sha256 `3dadda61…`). Follow [second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md). It answers three questions:
+   - Does a downloaded copy set up and run on a Mac other than the developer's, without developer tools?
+   - Does macOS ask for a second Open Anyway, for the app after the disk image's?
+   - Does provenance show the clean commit?
+
+   When packaging, Briefcase warns that an ad-hoc-signed app "will run on this computer, but will not run on anyone else's computer". This test is what checks that warning.
+2. **Macs managed by an institution** (for example with Jamf or Santa), where Open Anyway may be unavailable. Untested.
+
+**Platforms:**
+
+| Platform | Status |
+|---|---|
+| macOS 15, Apple Silicon | Tested by hand on one Mac (15.6.1); test suites and packaged app in CI (15.7.9) |
+| macOS 26, Apple Silicon | Test suites pass in CI (26.6.2). **The packaged app has not been run.** |
+| macOS 14, Apple Silicon | **Unverified.** It is the documented minimum, but nothing has been run on it. |
+| Intel Macs, Windows, Linux | Not supported |
 
 ## The candidate build
 
@@ -122,39 +148,27 @@ They are kept in a `mktemp -d` folder on the developer's Mac and are not committ
 - **Manual retest of the current packaged source** (2026-10-08): **passed**, on the image built on 2026-10-07 from the same packaged source, before the history rewrite. The current candidate is equivalent to it, file by file and in results (see [The candidate build](#the-candidate-build)), so that retest carries over.
 - **Jobs from the first manual run** were scored identically by the runner as well. Their CSVs were written by the earlier code, which still named an event (`AG`) for all-zero rows. The comparison now checks CSVs only for jobs made from the current source.
 
-## Release blockers
+## Release record
 
-### Before the source repository is made public
+### Source release (2026-10-09): done
 
-1. **Done: the personal email address is gone from the history** (2026-10-09). Commits now use the maintainer's GitHub noreply address. The old private repository, whose history and CI records contained the address, was deleted on 2026-10-09. The replacement private repository was created the same day with the cleaned history, and its CI passed ([ci.md](ci.md#results)). Recommended for the maintainer: GitHub's "Keep my email addresses private" and "Block command line pushes that expose my email" settings.
-2. **A green CI run on the last code commit before publishing.** In the replacement repository, the first push (head `987c04d`, packaged code identical to `ef23195`) passed every job ([ci.md](ci.md#results)). Documentation-only commits after it skip CI.
-3. **At release time:**
-   - set `date-released` in `CITATION.cff` and the date in `CHANGELOG.md`;
-   - tag `v0.1.0`;
-   - make the repository public.
+1. **The personal email address is gone from the history.** Commits now use the maintainer's GitHub noreply address. The old private repository, whose history and CI records contained the address, was deleted on 2026-10-09. The replacement repository was created the same day with the cleaned history, and its CI passed ([ci.md](ci.md#results)). The complete history was scanned again before release. Recommended for the maintainer: GitHub's "Keep my email addresses private" and "Block command line pushes that expose my email" settings.
+2. **CI is green on the code.** The replacement repository's first push (head `987c04d`, packaged code identical to `ef23195`) passed every job. The release commit's own CI run is listed in [ci.md](ci.md#results) once recorded.
+3. **Release date and tag.** `date-released: 2026-10-09` is set in `CITATION.cff`, along with the date in `CHANGELOG.md`, and the source is tagged `v0.1.0` on the release commit.
 
-   Each of these only on your approval.
+### Before a disk image is published
 
-### Before the next disk image is distributed
-
-1. **The second-Mac test** with the candidate disk image from `ef23195`, sha256 `3dadda61…` ([second-mac-checklist-v0.1.md](second-mac-checklist-v0.1.md)). It answers three questions:
-   - Does a browser-downloaded copy set up and run on a Mac other than the developer's, without developer tools?
-   - Does it need a second Open Anyway, for the app after the disk image's?
-   - Does provenance show the clean commit?
-
-   When packaging, Briefcase warns that an ad-hoc-signed app "will run on this computer, but will not run on anyone else's computer". This test is what checks that warning.
+1. **Pending: the installation checks** in [Pending installation and platform checks](#pending-installation-and-platform-checks).
 2. **Done: a manual retest of the packaged source** (2026-10-08). It carries over to the current candidate by equivalence (see [The candidate build](#the-candidate-build)).
-3. **Done: a candidate built from a clean commit** (`ef23195`) with the final identifier, minimum macOS, license texts, runtime and `uv.lock` dependency versions. The bundle check, the disk-image inspection and the packaged-app run passed. CI in the replacement repository passed every job ([ci.md](ci.md#results)).
+3. **Done: a candidate built from a clean commit** (`ef23195`) with the final identifier, minimum macOS, license texts, runtime and `uv.lock` dependency versions. The bundle check, the disk-image inspection, the packaged-app run and CI passed.
 4. **Done: the bundled Python runtime is updated.** The app's own runtime is now Python 3.13.16 with OpenSSL 3.5.9, verified from the binaries. The SpliceAI engine stays on Python 3.11. See [0007](decisions/0007-app-runtime-python-3.13.md).
 
    **Correction.** An earlier version of this page said the bundled 3.11 runtime "gets no security fixes" because Python 3.11 had no newer macOS binaries. That was too broad:
    - Python 3.11 still receives security fixes, as source-only releases until October 2027 (3.11.16 in August 2026).
    - What did not receive them was the bundled build: python.org's last 3.11 macOS binary, 3.11.9, with OpenSSL 3.0.13.
 
-## Explicitly pending (tracked, not blocking an experimental release)
+## Other pending items (tracked, not blocking an experimental release)
 
-- **macOS 14 compatibility: unverified.** No CI image and no Mac has run it. The packaged app has not run on macOS 26.
-- **IT-managed Macs** (Jamf, Santa), where Open Anyway may be unavailable.
 - **Independent expert review** of the explanation wording. The [wording review](wording-review-v0.1.md) checked consistency with SpliceAI's own documentation and code; it is not that review.
 - **Demo inputs based on public ClinVar records.** The test inputs are synthetic variants at real GRCh38 positions.
 
