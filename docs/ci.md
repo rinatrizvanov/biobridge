@@ -97,7 +97,18 @@ It no longer searches for a bare username. The candidate bundle passes the new r
 
 ### The replacement repository
 
-The replacement repository was created, private, on 2026-10-09 with the cleaned history.
+The replacement repository was created, private, on 2026-10-09 with the cleaned history. It was made public with the v0.1.0 source release on 2026-10-10.
+
+**Release CI.** Both release-related commits passed every job.
+- **`412ad4d`, the commit tagged `v0.1.0`:** run 38070167916, on 2026-10-10.
+  - Every step succeeded, with no artifacts.
+  - Tests on macOS 15.7.9 and 26.6.2: 152 unit, 30 browser and 28 real-engine tests passed on each.
+  - The packaged app on macOS 15.7.9 was built from `412ad4d` (source sha256 `1f90830a…`, Python 3.13.16 with OpenSSL 3.5.9) and passed the bundle check and the end-to-end run. All 166 requests were local, and no process survived Quit.
+- **`db177db`, the release commit before the date correction:** run 38014574926.
+  - The first attempt's packaged-app job failed on a network fault. GitHub's runner could not resolve `hgdownload.soe.ucsc.edu` (`nodename nor servname provided`) through all 5 download attempts, so the app could not fetch chr17.
+  - UCSC resolved and answered normally from elsewhere at the time.
+  - Rerunning that job, without changes, passed. The other jobs passed on the first attempt.
+  - The app's download retries span only about 15 s, so a longer name-resolution outage fails a job. It is listed as an optional improvement on the release page.
 
 **Run 38011119744**, for the first push (head `987c04d`, a documentation commit on top of the candidate `ef23195`): **every job passed.** Every step succeeded, and the run uploaded no artifacts. The run's commit metadata carries only the noreply address.
 
